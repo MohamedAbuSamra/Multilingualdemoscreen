@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -50,6 +50,17 @@ import type { PharmacyInventoryRow } from "../data/pharmacyInventorySample";
 import { PHARMACY_INVENTORY_PRODUCTS_V2 } from "../data/pharmacyInventoryProducts";
 
 type StockItemSource = "core" | "inventory" | "custom";
+type UnitOption =
+  | "box"
+  | "pack"
+  | "bottle"
+  | "blister"
+  | "strip"
+  | "vial"
+  | "ampoule"
+  | "tablet"
+  | "capsule"
+  | "piece";
 
 interface StockItem {
   id: string;
@@ -82,6 +93,9 @@ interface ProductGroupMeta {
   subtitleAr: string;
   barcode: string;
   categoryKey: string;
+  largestUnit: UnitOption;
+  smallestUnit: UnitOption;
+  smallestUnitsPerLargePack: string;
 }
 
 function buildCoreStockItem(product: AumetCoreProduct): StockItem {
@@ -166,6 +180,51 @@ export function ManualUpdateStockPage({
 }) {
   const { t, language } = useLanguage();
   const isRTL = language === "ar";
+  const largestUnitLabel = language === "ar" ? "أكبر وحدة" : "Largest Unit";
+  const smallestUnitLabel = language === "ar" ? "أصغر وحدة" : "Smallest Unit";
+  const conversionCountLabel =
+    language === "ar"
+      ? "عدد الوحدات الصغرى لكل عبوة كبرى"
+      : "Smallest Units / Large Pack";
+  const editProductLabel = language === "ar" ? "تعديل المنتج" : "Edit Product";
+  const unitLabels: Record<UnitOption, string> =
+    language === "ar"
+      ? {
+          box: "صندوق",
+          pack: "عبوة",
+          bottle: "زجاجة",
+          blister: "شريط",
+          strip: "ستريب",
+          vial: "فيال",
+          ampoule: "أمبول",
+          tablet: "قرص",
+          capsule: "كبسولة",
+          piece: "قطعة",
+        }
+      : {
+          box: "Box",
+          pack: "Pack",
+          bottle: "Bottle",
+          blister: "Blister",
+          strip: "Strip",
+          vial: "Vial",
+          ampoule: "Ampoule",
+          tablet: "Tablet",
+          capsule: "Capsule",
+          piece: "Piece",
+        };
+  const unitOptions: UnitOption[] = [
+    "box",
+    "pack",
+    "bottle",
+    "blister",
+    "strip",
+    "vial",
+    "ampoule",
+    "tablet",
+    "capsule",
+    "piece",
+  ];
   const [searchQuery, setSearchQuery] = useState("");
   const [addSourceOpen, setAddSourceOpen] = useState(false);
   const [corePickerOpen, setCorePickerOpen] = useState(false);
@@ -184,6 +243,9 @@ export function ManualUpdateStockPage({
   >(null);
   const [selectedExistingBatchIds, setSelectedExistingBatchIds] = useState<
     Record<string, string[]>
+  >({});
+  const [editableProductMetaKeys, setEditableProductMetaKeys] = useState<
+    Record<string, boolean>
   >({});
 
   const [useAumetReference, setUseAumetReference] = useState(true);
@@ -225,6 +287,9 @@ export function ManualUpdateStockPage({
           subtitleAr: product.subtitleAr,
           barcode: product.barcode,
           categoryKey: product.categoryKey,
+          largestUnit: "box" as const,
+          smallestUnit: "piece" as const,
+          smallestUnitsPerLargePack: "",
         }));
 
       return [...current, ...nextGroups];
@@ -257,6 +322,9 @@ export function ManualUpdateStockPage({
           subtitleAr: product.subtitleAr,
           barcode: product.barcode,
           categoryKey: product.categoryKey,
+          largestUnit: "box" as const,
+          smallestUnit: "piece" as const,
+          smallestUnitsPerLargePack: "",
         }));
 
       return [...current, ...nextGroups];
@@ -355,6 +423,9 @@ export function ManualUpdateStockPage({
           subtitleAr: "",
           barcode: product.barcode,
           categoryKey: product.categoryKey,
+          largestUnit: "box" as const,
+          smallestUnit: "piece" as const,
+          smallestUnitsPerLargePack: "",
         },
       ];
     });
@@ -401,6 +472,47 @@ export function ManualUpdateStockPage({
           [field]: value,
         } as StockItem;
       }),
+    );
+  };
+
+  const updateProductGroupMeta = (
+    groupKey: string,
+    field: "largestUnit" | "smallestUnit" | "smallestUnitsPerLargePack",
+    value: string,
+  ) => {
+    setProductGroups((current) =>
+      current.map((group) =>
+        group.key === groupKey ? { ...group, [field]: value } : group,
+      ),
+    );
+  };
+
+  const toggleProductMetaEditing = (groupKey: string) => {
+    setEditableProductMetaKeys((current) => ({
+      ...current,
+      [groupKey]: !current[groupKey],
+    }));
+  };
+
+  const updateProductIdentityMeta = (
+    groupKey: string,
+    field: "productNameEn" | "productNameAr" | "barcode",
+    value: string,
+  ) => {
+    const [source, productCode] = groupKey.split("::");
+
+    setProductGroups((current) =>
+      current.map((group) =>
+        group.key === groupKey ? { ...group, [field]: value } : group,
+      ),
+    );
+
+    setStockItems((current) =>
+      current.map((item) =>
+        item.productCode === productCode && item.source === source
+          ? { ...item, [field]: value }
+          : item,
+      ),
     );
   };
 
@@ -515,7 +627,7 @@ export function ManualUpdateStockPage({
         .map((item) => item.batchNumber),
     );
 
-    const rowsToAdd = normalizedProduct.batches
+    const rowsToAdd: StockItem[] = normalizedProduct.batches
       .filter((batch) => selectedBatchIds.includes(batch.id))
       .filter((batch) => !existingBatchNumbers.has(batch.batchNumber))
       .map((batch) => ({
@@ -534,7 +646,7 @@ export function ManualUpdateStockPage({
         expiry: batch.expiry,
         warehouseZone: batch.warehouseZone,
         currentStock: Number(batch.stockQty) || 0,
-        stockTypeUpdate: "stockIn",
+        stockTypeUpdate: "stockIn" as const,
         newStockQty: "",
         avgCost: batch.avgCost,
         sellPrice: batch.sellPrice,
@@ -765,7 +877,7 @@ export function ManualUpdateStockPage({
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-visible">
+        <div className="-mx-6 sm:mx-0 bg-white border border-gray-200 rounded-none sm:rounded-2xl overflow-visible">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
@@ -814,7 +926,7 @@ export function ManualUpdateStockPage({
                     }`}
                   >
                     <div
-                      className={`px-4 py-2.5 flex items-center justify-between gap-3 relative ${
+                      className={`px-4 py-2.5 flex items-start justify-between gap-3 relative ${
                         batchActionMenuOpenKey === group.key
                           ? "z-[1001]"
                           : "z-0"
@@ -824,11 +936,32 @@ export function ManualUpdateStockPage({
                         className={`min-w-0 flex-1 ${isRTL ? "text-right" : "text-left"}`}
                       >
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <div className="text-sm font-semibold text-gray-900 truncate">
-                            {language === "ar"
-                              ? group.productNameAr
-                              : group.productNameEn}
-                          </div>
+                          {editableProductMetaKeys[group.key] ? (
+                            <Input
+                              value={
+                                language === "ar"
+                                  ? group.productNameAr
+                                  : group.productNameEn
+                              }
+                              onChange={(e) =>
+                                updateProductIdentityMeta(
+                                  group.key,
+                                  language === "ar"
+                                    ? "productNameAr"
+                                    : "productNameEn",
+                                  e.target.value,
+                                )
+                              }
+                              dir={isRTL ? "rtl" : "ltr"}
+                              className={`h-6 sm:h-7 rounded-full w-[130px] sm:w-[180px] text-[11px] sm:text-xs bg-amber-100 border-amber-300 focus-visible:ring-amber-200 ${isRTL ? "text-right" : "text-left"}`}
+                            />
+                          ) : (
+                            <div className="text-sm font-semibold text-gray-900 truncate">
+                              {language === "ar"
+                                ? group.productNameAr
+                                : group.productNameEn}
+                            </div>
+                          )}
                           <Badge className="rounded-full px-2 py-0.5 text-[10px] bg-gray-100 text-gray-700 hover:bg-gray-100 h-5 shrink-0">
                             {t(`productSource.${group.source}`)}
                           </Badge>
@@ -846,15 +979,128 @@ export function ManualUpdateStockPage({
                           <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 rounded-full px-2 py-0.5 text-[10px] h-5 shrink-0">
                             {group.rows.length} {t("batches")}
                           </Badge>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] sm:text-[11px] text-gray-600 whitespace-nowrap">
+                              {largestUnitLabel}
+                            </span>
+                            {editableProductMetaKeys[group.key] ? (
+                              <Select
+                                value={group.largestUnit}
+                                onValueChange={(value) =>
+                                  updateProductGroupMeta(
+                                    group.key,
+                                    "largestUnit",
+                                    value,
+                                  )
+                                }
+                              >
+                                <SelectTrigger
+                                  className={`h-6 sm:h-7 rounded-full w-[86px] sm:w-[104px] text-[11px] sm:text-xs border-amber-300 bg-amber-100 ${isRTL ? "text-right" : "text-left"}`}
+                                  dir={isRTL ? "rtl" : "ltr"}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                  {unitOptions.map((unitOption) => (
+                                    <SelectItem key={unitOption} value={unitOption}>
+                                      {unitLabels[unitOption]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="h-6 sm:h-7 inline-flex items-center px-2 rounded-full bg-gray-100 text-gray-700 text-[11px] sm:text-xs">
+                                {unitLabels[group.largestUnit]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] sm:text-[11px] text-gray-600 whitespace-nowrap">
+                              {smallestUnitLabel}
+                            </span>
+                            {editableProductMetaKeys[group.key] ? (
+                              <Select
+                                value={group.smallestUnit}
+                                onValueChange={(value) =>
+                                  updateProductGroupMeta(
+                                    group.key,
+                                    "smallestUnit",
+                                    value,
+                                  )
+                                }
+                              >
+                                <SelectTrigger
+                                  className={`h-6 sm:h-7 rounded-full w-[86px] sm:w-[104px] text-[11px] sm:text-xs border-amber-300 bg-amber-100 ${isRTL ? "text-right" : "text-left"}`}
+                                  dir={isRTL ? "rtl" : "ltr"}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                  {unitOptions.map((unitOption) => (
+                                    <SelectItem key={unitOption} value={unitOption}>
+                                      {unitLabels[unitOption]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="h-6 sm:h-7 inline-flex items-center px-2 rounded-full bg-gray-100 text-gray-700 text-[11px] sm:text-xs">
+                                {unitLabels[group.smallestUnit]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] sm:text-[11px] text-gray-600 whitespace-nowrap">
+                              {conversionCountLabel}
+                            </span>
+                            {editableProductMetaKeys[group.key] ? (
+                              <Input
+                                type="number"
+                                min="0"
+                                value={group.smallestUnitsPerLargePack}
+                                onChange={(e) =>
+                                  updateProductGroupMeta(
+                                    group.key,
+                                    "smallestUnitsPerLargePack",
+                                    e.target.value,
+                                  )
+                                }
+                                dir="ltr"
+                                className="h-6 sm:h-7 rounded-full w-[70px] sm:w-[84px] text-[11px] sm:text-xs text-center bg-amber-100 border-amber-300 focus-visible:ring-amber-200"
+                              />
+                            ) : (
+                              <span
+                                dir="ltr"
+                                className="h-6 sm:h-7 inline-flex items-center px-2 rounded-full bg-gray-100 text-gray-700 text-[11px] sm:text-xs"
+                              >
+                                {group.smallestUnitsPerLargePack || "-"}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap min-w-0">
                           <span dir="ltr" className="shrink-0">
                             {group.productCode}
                           </span>
                           <span className="shrink-0">•</span>
-                          <span dir="ltr" className="truncate">
-                            {group.barcode}
-                          </span>
+                          {editableProductMetaKeys[group.key] ? (
+                            <Input
+                              value={group.barcode}
+                              onChange={(e) =>
+                                updateProductIdentityMeta(
+                                  group.key,
+                                  "barcode",
+                                  e.target.value,
+                                )
+                              }
+                              dir="ltr"
+                              className="h-6 rounded-full w-[120px] sm:w-[150px] text-[11px] sm:text-xs bg-amber-100 border-amber-300 focus-visible:ring-amber-200"
+                            />
+                          ) : (
+                            <span dir="ltr" className="truncate">
+                              {group.barcode}
+                            </span>
+                          )}
                           <span className="shrink-0">•</span>
                           <span className="truncate">
                             {t(group.categoryKey)}
@@ -874,7 +1120,7 @@ export function ManualUpdateStockPage({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0 relative z-[9999]">
+                      <div className="flex items-start gap-2 shrink-0 relative z-[9999]">
                         {(() => {
                           const normalizedProduct =
                             group.source === "inventory"
@@ -912,6 +1158,18 @@ export function ManualUpdateStockPage({
                               >
                                 <Plus className="size-4" />
                                 {t("addBatch")}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => toggleProductMetaEditing(group.key)}
+                                className={`h-8 px-3 rounded-full gap-2 text-xs shrink-0 whitespace-nowrap ${
+                                  editableProductMetaKeys[group.key]
+                                    ? "border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                <PencilLine className="size-4" />
+                                {editProductLabel}
                               </Button>
 
                               <Button
@@ -1035,50 +1293,50 @@ export function ManualUpdateStockPage({
 
                     {group.rows.length > 0 ? (
                       <div className="overflow-x-auto">
-                        <Table>
+                        <Table className="text-[11px] sm:text-xs">
                           <TableHeader>
                             <TableRow className="border-b border-gray-200 bg-white">
                               <TableHead
-                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                                className={`text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 ${isRTL ? "text-right" : "text-left"}`}
                               >
                                 {t("batchNumber")}
                               </TableHead>
                               <TableHead
-                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                                className={`text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 ${isRTL ? "text-right" : "text-left"}`}
                               >
                                 {t("expiry")}
                               </TableHead>
                               <TableHead
-                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                                className={`text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 ${isRTL ? "text-right" : "text-left"}`}
                               >
                                 {t("warehouseLocation")}
                               </TableHead>
-                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
+                              <TableHead className="text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 text-center">
                                 {t("currentStock")}
                               </TableHead>
                               <TableHead
-                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                                className={`text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 ${isRTL ? "text-right" : "text-left"}`}
                               >
                                 {t("stockTypeUpdate")}
                               </TableHead>
-                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
+                              <TableHead className="text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 text-center">
                                 {t("newStockQty")}
                               </TableHead>
-                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
+                              <TableHead className="text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 text-center">
                                 {t("cost")}
                               </TableHead>
-                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
+                              <TableHead className="text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 text-center">
                                 {t("sellingPrice")}
                               </TableHead>
-                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
+                              <TableHead className="text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 text-center">
                                 {t("newStockLevel")}
                               </TableHead>
                               <TableHead
-                                className={`text-xs font-semibold text-gray-700 h-11 min-w-[220px] ${isRTL ? "text-right" : "text-left"}`}
+                                className={`text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 ${isRTL ? "text-right" : "text-left"}`}
                               >
                                 {t("reason")}
                               </TableHead>
-                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
+                              <TableHead className="sticky right-0 z-10 bg-white text-[10px] sm:text-[11px] font-semibold text-gray-700 h-8 sm:h-10 text-center min-w-[52px] sm:min-w-[64px] border-l border-gray-200 shadow-[-6px_0_8px_-8px_rgba(0,0,0,0.18)]">
                                 {t("actions")}
                               </TableHead>
                             </TableRow>
@@ -1101,7 +1359,7 @@ export function ManualUpdateStockPage({
                                   className="border-b border-gray-200 hover:bg-gray-50"
                                 >
                                   <TableCell
-                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                    className={`py-2 xl:py-3 ${isRTL ? "text-right" : "text-left"}`}
                                   >
                                     <Input
                                       value={item.batchNumber}
@@ -1114,11 +1372,11 @@ export function ManualUpdateStockPage({
                                       }
                                       placeholder={t("newBatch")}
                                       dir="ltr"
-                                      className="h-10 rounded-full min-w-[140px]"
+                                      className="h-8 xl:h-9 rounded-full w-[88px] sm:w-[100px] xl:w-[118px] text-[11px] sm:text-xs"
                                     />
                                   </TableCell>
                                   <TableCell
-                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                    className={`py-2 xl:py-3 ${isRTL ? "text-right" : "text-left"}`}
                                   >
                                     <Input
                                       value={item.expiry}
@@ -1131,11 +1389,11 @@ export function ManualUpdateStockPage({
                                       }
                                       placeholder="YYYY-MM"
                                       dir="ltr"
-                                      className="h-10 rounded-full min-w-[120px]"
+                                      className="h-8 xl:h-9 rounded-full w-[84px] sm:w-[96px] xl:w-[110px] text-[11px] sm:text-xs"
                                     />
                                   </TableCell>
                                   <TableCell
-                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                    className={`py-2 xl:py-3 ${isRTL ? "text-right" : "text-left"}`}
                                   >
                                     <Input
                                       value={item.warehouseZone}
@@ -1148,18 +1406,18 @@ export function ManualUpdateStockPage({
                                       }
                                       placeholder={t("warehouseLocation")}
                                       dir={isRTL ? "rtl" : "ltr"}
-                                      className={`h-10 rounded-full min-w-[140px] ${isRTL ? "text-right" : "text-left"}`}
+                                      className={`h-8 xl:h-9 rounded-full w-[88px] sm:w-[106px] xl:w-[128px] text-[11px] sm:text-xs ${isRTL ? "text-right" : "text-left"}`}
                                     />
                                   </TableCell>
-                                  <TableCell className="py-3 text-center">
-                                    <div className="inline-flex min-w-[88px] items-center justify-center rounded-md bg-gray-50 px-2 py-1 text-sm font-semibold text-gray-900">
+                                  <TableCell className="py-2 xl:py-3 text-center">
+                                    <div className="inline-flex min-w-[64px] sm:min-w-[76px] items-center justify-center rounded-md bg-gray-50 px-2 py-1 text-[11px] sm:text-xs font-semibold text-gray-900">
                                       {item.currentStock.toLocaleString(
                                         "en-GB",
                                       )}
                                     </div>
                                   </TableCell>
                                   <TableCell
-                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                    className={`py-2 xl:py-3 ${isRTL ? "text-right" : "text-left"}`}
                                   >
                                     <Select
                                       value={item.stockTypeUpdate}
@@ -1172,7 +1430,7 @@ export function ManualUpdateStockPage({
                                       }
                                     >
                                       <SelectTrigger
-                                        className={`w-[150px] rounded-full border-gray-300 h-10 text-sm ${isRTL ? "text-right" : "text-left"}`}
+                                        className={`w-[92px] sm:w-[108px] xl:w-[120px] rounded-full border-gray-300 h-8 xl:h-9 text-[11px] sm:text-xs ${isRTL ? "text-right" : "text-left"}`}
                                         dir={isRTL ? "rtl" : "ltr"}
                                       >
                                         <SelectValue />
@@ -1187,7 +1445,7 @@ export function ManualUpdateStockPage({
                                       </SelectContent>
                                     </Select>
                                   </TableCell>
-                                  <TableCell className="py-3 text-center">
+                                  <TableCell className="py-2 xl:py-3 text-center">
                                     <Input
                                       type="number"
                                       min="0"
@@ -1200,10 +1458,10 @@ export function ManualUpdateStockPage({
                                         )
                                       }
                                       dir="ltr"
-                                      className="w-[120px] h-10 rounded-full text-center mx-auto"
+                                      className="w-[64px] sm:w-[76px] xl:w-[90px] h-8 xl:h-9 rounded-full text-center mx-auto text-[11px] sm:text-xs"
                                     />
                                   </TableCell>
-                                  <TableCell className="py-3 text-center">
+                                  <TableCell className="py-2 xl:py-3 text-center">
                                     <Input
                                       type="number"
                                       min="0"
@@ -1217,10 +1475,10 @@ export function ManualUpdateStockPage({
                                         )
                                       }
                                       dir="ltr"
-                                      className="w-[120px] h-10 rounded-full text-center mx-auto"
+                                      className="w-[64px] sm:w-[76px] xl:w-[90px] h-8 xl:h-9 rounded-full text-center mx-auto text-[11px] sm:text-xs"
                                     />
                                   </TableCell>
-                                  <TableCell className="py-3 text-center">
+                                  <TableCell className="py-2 xl:py-3 text-center">
                                     <Input
                                       type="number"
                                       min="0"
@@ -1234,12 +1492,12 @@ export function ManualUpdateStockPage({
                                         )
                                       }
                                       dir="ltr"
-                                      className="w-[120px] h-10 rounded-full text-center mx-auto"
+                                      className="w-[64px] sm:w-[76px] xl:w-[90px] h-8 xl:h-9 rounded-full text-center mx-auto text-[11px] sm:text-xs"
                                     />
                                   </TableCell>
-                                  <TableCell className="py-3 text-center">
+                                  <TableCell className="py-2 xl:py-3 text-center">
                                     <div
-                                      className={`inline-flex min-w-[88px] items-center justify-center rounded-md px-2 py-1 text-sm font-semibold ${
+                                      className={`inline-flex min-w-[64px] sm:min-w-[76px] items-center justify-center rounded-md px-2 py-1 text-[11px] sm:text-xs font-semibold ${
                                         nextLevel > item.currentStock
                                           ? "bg-green-50 text-green-700"
                                           : nextLevel < item.currentStock
@@ -1250,10 +1508,10 @@ export function ManualUpdateStockPage({
                                       {nextLevel.toLocaleString("en-GB")}
                                     </div>
                                   </TableCell>
-                                  <TableCell
-                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
-                                  >
-                                    <Input
+                                    <TableCell
+                                    className={`py-2 xl:py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                    >
+                                      <Input
                                       value={item.reason}
                                       onChange={(e) =>
                                         updateStockItem(
@@ -1264,18 +1522,18 @@ export function ManualUpdateStockPage({
                                       }
                                       placeholder={t("enterAdjustmentReason")}
                                       dir={isRTL ? "rtl" : "ltr"}
-                                      className={`h-10 rounded-full min-w-[220px] ${isRTL ? "text-right" : "text-left"}`}
+                                      className={`h-8 xl:h-9 rounded-full w-[92px] sm:w-[130px] xl:w-[168px] text-[11px] sm:text-xs ${isRTL ? "text-right" : "text-left"}`}
                                     />
                                   </TableCell>
-                                  <TableCell className="py-3 text-center">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => removeStockItem(item.id)}
-                                      className="size-8 p-0 hover:bg-red-50 text-red-600 rounded-full"
-                                    >
-                                      <Trash2 className="size-4" />
-                                    </Button>
+                                  <TableCell className="sticky right-0 z-10 bg-white py-2 xl:py-3 text-center border-l border-gray-200 shadow-[-6px_0_8px_-8px_rgba(0,0,0,0.18)]">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeStockItem(item.id)}
+                                        className="size-8 p-0 hover:bg-red-50 text-red-600 rounded-full"
+                                      >
+                                        <Trash2 className="size-4" />
+                                      </Button>
                                   </TableCell>
                                 </TableRow>
                               );
