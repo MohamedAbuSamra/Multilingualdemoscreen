@@ -1,0 +1,58 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
+
+# Environment files
+.env
+# .env.local
+# .env.development
+# .env.production
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
+*.tsbuildinfo
+
+# Cache
+.cache/
+
+
+# Used By Pipeline
+last_successful_commit.txt
+
+
+# remove fake data (this local data folder is used for testing purposes to avoid using backend or waiting for backend to be ready)
+fake-data/*
+/src/fake-data/*
+*storybook.log
+storybook-static
+
+.cursorignore
+.playwright-mcp
+
+# Generated localization export files
+localization_exports/

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, History, Search, Filter, Download, MoreVertical, ShoppingBag, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -20,154 +20,41 @@ import {
 import { useLanguage } from '../contexts/LanguageContext';
 import { FiltersSection } from './FiltersSection';
 import { CreateProductDialog } from './CreateProductDialog';
+import {
+  INVENTORY_PRODUCT_COUNT,
+  PHARMACY_INVENTORY_PRODUCTS,
+} from '../data/pharmacyInventorySample';
 
 interface InventoryPageProps {
   onNavigate: (page: 'products' | 'updateStock') => void;
 }
 
 export function InventoryPage({ onNavigate }: InventoryPageProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [createProductOpen, setCreateProductOpen] = useState(false);
 
-  const products = [
-    {
-      code: 'Lorem Ipsum',
-      name: 'Lorem Ipsum',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Lorem',
-      expiry: 'Lorem',
-      lastSale: 'JOD',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '0.00',
-      status: 'Delivered',
-      statusColor: 'red',
-    },
-    {
-      code: 'Lorem Ipsum',
-      name: 'Descriptive filling',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Lorem',
-      expiry: 'Lorem',
-      lastSale: 'Lorem ipsum',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '',
-      status: 'Delivered',
-      statusColor: 'red',
-    },
-    {
-      code: 'Descriptive filling',
-      name: 'Descriptive filling',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Descriptive filling',
-      expiry: 'Descriptive filling',
-      lastSale: 'JOD',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '0.00',
-      status: 'Active',
-      statusColor: 'yellow',
-    },
-    {
-      code: 'Lorem Ipsum',
-      name: 'Lorem Ipsum',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Lorem',
-      expiry: 'Lorem',
-      lastSale: 'JOD',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '0.00',
-      status: 'Active',
-      statusColor: 'yellow',
-    },
-    {
-      code: 'Lorem Ipsum',
-      name: 'Lorem Ipsum',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Lorem',
-      expiry: 'Lorem',
-      lastSale: 'Lorem ipsum',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '',
-      status: '',
-      statusColor: '',
-    },
-    {
-      code: 'Descriptive filling',
-      name: 'Descriptive filling',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Descriptive filling',
-      expiry: 'Descriptive filling',
-      lastSale: 'JOD',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '0.00',
-      status: '',
-      statusColor: '',
-    },
-    {
-      code: 'Lorem Ipsum',
-      name: 'Lorem Ipsum',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Lorem',
-      expiry: 'Lorem',
-      lastSale: 'JOD',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '0.00',
-      status: 'Active',
-      statusColor: 'yellow',
-    },
-    {
-      code: 'Lorem Ipsum',
-      name: 'Lorem Ipsum',
-      subtitle: 'Lorem ipsum',
-      barcode: 'Lorem ipsum',
-      category: 'Lorem ipsum',
-      lotBatch: 'Lorem',
-      expiry: 'Lorem',
-      lastSale: 'Lorem ipsum',
-      stockQty: '00.0',
-      avgCost: '00.00',
-      sellPrice: '00.00',
-      tax: '0.00',
-      warehouse: '',
-      status: '',
-      statusColor: '',
-    },
-  ];
+  const products = useMemo(
+    () =>
+      PHARMACY_INVENTORY_PRODUCTS.map((row) => ({
+        code: row.code,
+        name: language === 'ar' ? row.nameAr : row.nameEn,
+        subtitle: language === 'ar' ? row.subtitleAr : row.subtitleEn,
+        barcode: row.barcode,
+        category: t(row.categoryKey),
+        lotBatch: row.lotBatch,
+        expiry: row.expiry,
+        lastSale: `${t('jod')} ${row.lastSaleAmount}`,
+        stockQty: row.stockQty,
+        avgCost: row.avgCost,
+        sellPrice: row.sellPrice,
+        tax: row.tax,
+        warehouse: `${t('main')} · ${row.warehouseZone}`,
+        status: row.statusKey ? t(row.statusKey) : '',
+        statusColor: row.statusColor,
+      })),
+    [language, t],
+  );
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
@@ -204,7 +91,7 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                 </div>
               </div>
               <div className="text-end">
-                <div className="text-4xl font-semibold text-gray-900">2</div>
+                <div className="text-4xl font-semibold text-gray-900">{INVENTORY_PRODUCT_COUNT}</div>
               </div>
             </div>
           </div>
@@ -343,8 +230,8 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product, index) => (
-                  <TableRow key={index} className="border-b border-gray-200 hover:bg-gray-50">
+                {products.map((product) => (
+                  <TableRow key={product.code} className="border-b border-gray-200 hover:bg-gray-50">
                     <TableCell className="py-3">
                       <div className="size-9 bg-gray-200 rounded-lg"></div>
                     </TableCell>
@@ -381,7 +268,9 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                           className={`text-xs px-2 py-0.5 rounded-full ${
                             product.statusColor === 'red'
                               ? 'bg-red-100 text-red-700 hover:bg-red-100'
-                              : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
+                              : product.statusColor === 'green'
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                                : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
                           }`}
                         >
                           {product.status}
@@ -402,7 +291,7 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
           <div className="px-4 py-3 border-t border-gray-200 bg-white">
             <div className="flex items-center justify-between text-sm">
               <div className="text-gray-600">
-                {t('showing')} 1 {t('to')} 2 {t('of')} 2 {t('results')}
+                {t('inventoryTablePaginationSummary')}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-gray-600">{t('show')}</span>
@@ -418,7 +307,7 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
         </div>
 
         <div className="text-center text-sm text-gray-500">
-          {t('allResultsOnThisPage')}
+          {t('inventoryTableAllOnPage')}
         </div>
       </div>
 

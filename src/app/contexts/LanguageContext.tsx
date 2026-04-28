@@ -1,11 +1,6 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-} from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
-type Language = "en" | "ar";
+export type Language = "en" | "ar";
 
 interface LanguageContextType {
   language: Language;
@@ -13,9 +8,9 @@ interface LanguageContextType {
   t: (key: string) => string;
 }
 
-const LanguageContext = createContext<
-  LanguageContextType | undefined
->(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(
+  undefined,
+);
 
 /**
  * IMPORTANT: When adding new translation keys:
@@ -48,6 +43,79 @@ const translations = {
     createStockAdjustment: "Create Stock Adjustment",
     inventoryAdjustmentHistory: "Inventory Adjustment History",
     printBarcode: "Print Barcode",
+    addProduct: "Add Product",
+    browseAumetCore: "Browse Aumet Core",
+    myProducts: "My Products",
+    newProduct: "New Product",
+    chooseProductSourceDescription:
+      "Choose where you want to add a product from for this manual stock update.",
+    sourceAumetCore: "Aumet Core",
+    sourceAumetCoreDescription:
+      "Browse predefined catalog products from Aumet Core.",
+    sourceMyProducts: "My Products",
+    sourceMyProductsDescription:
+      "Select products that already exist in your inventory.",
+    sourceNewProduct: "New Product",
+    sourceNewProductDescription:
+      "Create a brand-new custom product and add it directly to the table.",
+    myProductsDescription:
+      "Browse products already available in your inventory and add them to the manual stock table.",
+    searchMyProducts:
+      "Search by code, product name, barcode, batch, or warehouse...",
+    noMyProductsFound: "No inventory products found",
+    selectProductsFromInventory:
+      "Select one or more products from your inventory to add into the manual stock table.",
+    newProductDescription:
+      "Create a custom product that is not available in Aumet Core or your inventory.",
+    enterProductCode: "Enter product code",
+    enterBarcode: "Enter barcode",
+    productNameEn: "Product Name EN",
+    productNameAr: "Product Name AR",
+    enterProductNameEn: "Enter English product name",
+    enterProductNameAr: "Enter Arabic product name",
+    productCodeAlreadyExists:
+      "This product code is already added to the table.",
+    customProductWillBeAddedToTable:
+      "This product will be added as a normal editable row in the manual stock table.",
+    productSource: "Source",
+    "productSource.core": "Aumet Core",
+    "productSource.inventory": "My Products",
+    "productSource.custom": "New Product",
+    aumetCoreProducts: "Aumet Core Products",
+    aumetCoreProductsDescription:
+      "Browse predefined pharmacy products and add them to your manual stock table.",
+    searchAumetCoreProducts:
+      "Search by code, product name, barcode, or manufacturer...",
+    selectedItems: "selected",
+    manufacturer: "Manufacturer",
+    alreadyAdded: "Already added",
+    noAumetCoreProductsFound: "No Aumet Core products found",
+    selectProductsToAddToManualStock:
+      "Select one or more products to add into the manual stock table.",
+    addSelectedProducts: "Add Selected Products",
+    manualUpdateStockDescription:
+      "Manually update stock for selected products using an editable table.",
+    manualStockOptions: "Manual Stock Options",
+    configureBeforeManualUpdate: "Configure before manual update",
+    searchManualStockTable: "Search within selected products...",
+    currentStock: "Current Stock",
+    adjustmentType: "Adjustment Type",
+    stockTypeUpdate: "Stock Type Update",
+    stockIn: "Stock In",
+    stockOut: "Stock Out",
+    newStockQty: "New Stock Qty",
+    newStockLevel: "New Stock",
+    adjustmentAdd: "Add",
+    adjustmentSubtract: "Subtract",
+    adjustmentSet: "Set To",
+    enterAdjustmentReason: "Enter adjustment reason...",
+    manualStockRowsCount: "Rows:",
+    saveAdjustments: "Save Adjustments",
+    saveAsDraft: "Save as Draft",
+    noProductsAddedYet: "No products added yet",
+    manualStockEmptyStateDescription:
+      "Browse Aumet Core products and add them here to start updating stock manually.",
+    loadingMoreProducts: "Loading more products...",
 
     // Buttons
     createNew: "Create New",
@@ -62,13 +130,11 @@ const translations = {
     totalProducts: "Total Products",
     activeProductsInInventory: "Active products in inventory",
     expiringsSoon: "Expiring Soon",
-    productsExpiringsNext90Days:
-      "Products expirings next 90 days",
+    productsExpiringsNext90Days: "Products expirings next 90 days",
     lowStock: "Low Stock",
     productsBelowMinimumLevel: "Products below minimum level",
     stagnantProducts: "Stagnant Products",
-    productsNoSales90Days:
-      "Products with no sales in the last 90+ days",
+    productsNoSales90Days: "Products with no sales in the last 90+ days",
 
     // Bulk Stocks Page
     bulkStocksHistory: "Bulk Stocks History",
@@ -79,16 +145,14 @@ const translations = {
     createManualList: "Create Manual List",
 
     // Cards
-    receiveMarketplacePurchaseOrders:
-      "Receive Marketplace Purchase Orders",
+    receiveMarketplacePurchaseOrders: "Receive Marketplace Purchase Orders",
     new: "New",
     createNewPurchaseOrder: "Create New Purchase Order",
     lastAdded: "Last Added",
     daysAgo: "days ago",
 
     // Search & Table
-    searchByNameIdBarcodeHatch:
-      "Search by name, ID, barcode, batch...",
+    searchByNameIdBarcodeHatch: "Search by name, ID, barcode, batch...",
     code: "Code",
     productName: "Product Name",
     barcode: "Barcode",
@@ -96,6 +160,7 @@ const translations = {
     lotBatch: "Lot/Batch",
     expiry: "Expiry",
     lastSale: "Last Sale",
+    jod: "JOD",
     stockQty: "Stock Qty",
     avgCostPrice: "Avg Cost Price",
     sellPrice: "Sell Price",
@@ -115,8 +180,7 @@ const translations = {
     allResultsOnThisPage: "All 2 results on this page",
 
     // Footer
-    poweredByPulse:
-      "Powered by Pulse - The Heartbeat of Your Pharmacy",
+    poweredByPulse: "Powered by Pulse - The Heartbeat of Your Pharmacy",
     startTour: "Start Tour",
     help: "Help",
 
@@ -159,11 +223,15 @@ const translations = {
     addAnotherBatch: "Add Another Batch",
     moreOptions: "More Options",
     needMoreFields: "Need More Fields? Switch to Full Page",
+    back: "Back",
+    next: "Next",
+    backToChooseProductSource: "Back to choose product source",
     cancel: "Cancel",
     saveProduct: "Save Product",
 
     // Stock History Page
-    searchAdjustmentHistory: "Search by adjustment ID, user, status, or product name...",
+    searchAdjustmentHistory:
+      "Search by adjustment ID, user, status, or product name...",
     stockId: "Stock ID",
     createdAt: "Created At",
     createdUser: "Created User",
@@ -172,11 +240,16 @@ const translations = {
     autoMigrated: "Auto migrated",
     failedMigrated: "Failed migrated",
     viewEditDetails: "View & Edit Details",
+    viewStockUpdateDetails: "View Stock Update Details",
+    viewStockUpdateDetailsDescription:
+      "Review the stock update rows in the same table experience used for manual stock updates.",
+    backToHistory: "Back to History",
     exportReport: "Export Report",
 
     // Import Dialog
     updateStockTitle: "Update Stock",
-    uploadInventoryDescription: "Upload your inventory file with AI-powered migration",
+    uploadInventoryDescription:
+      "Upload your inventory file with AI-powered migration",
     uploadProductsFile: "Upload your products file",
     excelCsvFormat: "Excel or CSV format • Maximum 25MB",
     dropFileHere: "Drop your file here",
@@ -195,11 +268,13 @@ const translations = {
     uploadOptions: "Upload Options",
     configureBeforeUpload: "Configure before upload",
     matchAumetProducts: "Match Aumet Products",
-    autoFillProductDetails: "Automatically fill in product details from Aumet database",
+    autoFillProductDetails:
+      "Automatically fill in product details from Aumet database",
     autoCreateBarcodes: "Auto-Create Barcodes",
     generateBarcodesForProducts: "Generate barcodes for products without them",
     resetOldStock: "Reset Old Stock",
-    clearExistingStock: "Clear all existing stock for products in this file before adding new stock",
+    clearExistingStock:
+      "Clear all existing stock for products in this file before adding new stock",
     setStockToZero: "Set existing stock to zero before upload",
     downloadSample: "Download Sample",
     getTemplate: "Get a template to fill in",
@@ -211,7 +286,7 @@ const translations = {
 
     // Filters
     categoryFilter: "Category",
-    selectCategory: "Select a category",
+    filterSelectCategory: "Select a category",
     stockRange: "Stock Range",
     selectStockRange: "Select Stock Range",
     expiryStatus: "Expiry Status",
@@ -226,6 +301,55 @@ const translations = {
     createdUserFilter: "Created User",
     allUsers: "All Users",
     allStatus: "All Status",
+
+    // Inventory — product categories (pharmacy sample)
+    categoryGastrointestinal: "Gastrointestinal",
+    categoryAntibiotic: "Antibiotics",
+    categoryCardiovascular: "Cardiovascular",
+    categoryVitamins: "Vitamins & Supplements",
+    categoryOtc: "OTC & Allergy",
+    categoryDiabetes: "Diabetes",
+    categoryDermatology: "Dermatology",
+    categoryAnalgesic: "Analgesics & Antipyretics",
+
+    // Inventory — line statuses
+    productStatusExpiringSoon: "Expiring Soon",
+    productStatusActive: "Active",
+    productStatusOutOfStock: "Out of Stock",
+
+    // Inventory — table footer (8 demo products)
+    inventoryTablePaginationSummary: "Showing 1 to 8 of 8 results",
+    inventoryTableAllOnPage: "All 8 results on this page",
+
+    // Update Stock page (stats, adjustments table, footer)
+    statTotalAdjustments: "Total Adjustments",
+    statConfirmed: "Confirmed",
+    statInProgress: "In Progress",
+    statFailedCancelled: "Failed / Cancelled",
+    adjustmentStatusDraft: "Draft",
+    adjustmentStatusPending: "Pending",
+    adjustmentStatusProcessing: "Processing",
+    adjustmentStatusConfirmed: "Confirmed",
+    adjustmentStatusReversal: "Reversal",
+    adjustmentStatusFailed: "Failed",
+    cancelAdjustment: "Cancel Adjustment",
+    actionNotAvailable: "Action not available",
+    adjustmentOverview: "Adjustment overview",
+    adjustmentOverviewDescription:
+      "Quick view of the most important stock adjustment outcomes.",
+    adjustmentCountLabel: "Records",
+    undoAction: "Undo Action",
+    adjustmentStatusAiProcessing: "AI processing",
+    adjustmentStatusCancelled: "Cancelled",
+    notAvailableMark: "—",
+    stockHistoryPaginationSummary: "Showing 1–4 of 25 results",
+    lastStockAdjustmentPrefix: "Last stock adjustment:",
+    userSarahWilson: "Dr. Sarah Wilson",
+    userAhmedRashid: "Ahmed Al-Rashid",
+    userFatimaHassan: "Fatima Hassan",
+    breadcrumbSeparator: "›",
+    paginationPreviousPage: "Previous page",
+    paginationNextPage: "Next page",
   },
   ar: {
     // Navbar
@@ -251,6 +375,76 @@ const translations = {
     createStockAdjustment: "إنشاء تعديل المخزون",
     inventoryAdjustmentHistory: "سجل تعديلات المخزون",
     printBarcode: "طباعة الباركود",
+    addProduct: "إضافة منتج",
+    browseAumetCore: "استعراض Aumet Core",
+    myProducts: "منتجاتي",
+    newProduct: "منتج جديد",
+    chooseProductSourceDescription:
+      "اختر مصدر المنتج الذي تريد إضافته في تحديث المخزون اليدوي.",
+    sourceAumetCore: "Aumet Core",
+    sourceAumetCoreDescription: "استعرض منتجات الكتالوج الجاهزة من Aumet Core.",
+    sourceMyProducts: "منتجاتي",
+    sourceMyProductsDescription: "اختر منتجات موجودة بالفعل في مخزونك.",
+    sourceNewProduct: "منتج جديد",
+    sourceNewProductDescription:
+      "أنشئ منتجاً مخصصاً جديداً وأضفه مباشرة إلى الجدول.",
+    myProductsDescription:
+      "استعرض المنتجات الموجودة بالفعل في مخزونك وأضفها إلى جدول التحديث اليدوي.",
+    searchMyProducts:
+      "ابحث بالرمز أو اسم المنتج أو الباركود أو الدفعة أو المستودع...",
+    noMyProductsFound: "لم يتم العثور على منتجات في المخزون",
+    selectProductsFromInventory:
+      "اختر منتجاً أو أكثر من مخزونك لإضافته إلى جدول التحديث اليدوي.",
+    newProductDescription:
+      "أنشئ منتجاً مخصصاً غير موجود في Aumet Core أو في مخزونك.",
+    enterProductCode: "أدخل رمز المنتج",
+    enterBarcode: "أدخل الباركود",
+    productNameEn: "اسم المنتج بالإنجليزية",
+    productNameAr: "اسم المنتج بالعربية",
+    enterProductNameEn: "أدخل اسم المنتج باللغة الإنجليزية",
+    enterProductNameAr: "أدخل اسم المنتج باللغة العربية",
+    productCodeAlreadyExists: "تمت إضافة رمز هذا المنتج بالفعل إلى الجدول.",
+    customProductWillBeAddedToTable:
+      "سيتم إضافة هذا المنتج كصف طبيعي قابل للتعديل داخل جدول التحديث اليدوي.",
+    productSource: "المصدر",
+    "productSource.core": "Aumet Core",
+    "productSource.inventory": "منتجاتي",
+    "productSource.custom": "منتج جديد",
+    aumetCoreProducts: "منتجات Aumet Core",
+    aumetCoreProductsDescription:
+      "استعرض المنتجات الصيدلانية الجاهزة وأضفها إلى جدول التحديث اليدوي.",
+    searchAumetCoreProducts:
+      "ابحث بالرمز أو اسم المنتج أو الباركود أو الشركة المصنّعة...",
+    selectedItems: "محدد",
+    manufacturer: "الشركة المصنّعة",
+    alreadyAdded: "تمت إضافته مسبقاً",
+    noAumetCoreProductsFound: "لم يتم العثور على منتجات في Aumet Core",
+    selectProductsToAddToManualStock:
+      "اختر منتجاً أو أكثر لإضافته إلى جدول التحديث اليدوي.",
+    addSelectedProducts: "إضافة المنتجات المحددة",
+    manualUpdateStockDescription:
+      "قم بتحديث المخزون يدوياً للمنتجات المحددة من خلال جدول قابل للتعديل.",
+    manualStockOptions: "خيارات التحديث اليدوي للمخزون",
+    configureBeforeManualUpdate: "قم بالإعداد قبل التحديث اليدوي",
+    searchManualStockTable: "ابحث داخل المنتجات المحددة...",
+    currentStock: "المخزون الحالي",
+    adjustmentType: "نوع التعديل",
+    stockTypeUpdate: "نوع تحديث المخزون",
+    stockIn: "إدخال مخزون",
+    stockOut: "إخراج مخزون",
+    newStockQty: "كمية المخزون الجديدة",
+    newStockLevel: "المخزون الجديد",
+    adjustmentAdd: "إضافة",
+    adjustmentSubtract: "طرح",
+    adjustmentSet: "تعيين إلى",
+    enterAdjustmentReason: "أدخل سبب التعديل...",
+    manualStockRowsCount: "عدد الصفوف:",
+    saveAdjustments: "حفظ التعديلات",
+    saveAsDraft: "حفظ كمسودة",
+    noProductsAddedYet: "لم تتم إضافة منتجات بعد",
+    manualStockEmptyStateDescription:
+      "استعرض منتجات Aumet Core وأضفها هنا لبدء تحديث المخزون يدوياً.",
+    loadingMoreProducts: "جارٍ تحميل المزيد من المنتجات...",
 
     // Buttons
     createNew: "إنشاء جديد",
@@ -265,13 +459,11 @@ const translations = {
     totalProducts: "إجمالي المنتجات",
     activeProductsInInventory: "المنتجات النشطة في المخزون",
     expiringsSoon: "تنتهي قريباً",
-    productsExpiringsNext90Days:
-      "المنتجات التي تنتهي في الـ 90 يوماً القادمة",
+    productsExpiringsNext90Days: "المنتجات التي تنتهي في الـ 90 يوماً القادمة",
     lowStock: "مخزون منخفض",
     productsBelowMinimumLevel: "المنتجات تحت الحد الأدنى",
     stagnantProducts: "منتجات راكدة",
-    productsNoSales90Days:
-      "منتجات بدون مبيعات في آخر 90+ يوماً",
+    productsNoSales90Days: "منتجات بدون مبيعات في آخر 90+ يوماً",
 
     // Bulk Stocks Page
     bulkStocksHistory: "سجل تعديلات المخزون",
@@ -289,8 +481,7 @@ const translations = {
     daysAgo: "أيام مضت",
 
     // Search & Table
-    searchByNameIdBarcodeHatch:
-      "البحث بالاسم، المعرف، الباركود، الدفعة...",
+    searchByNameIdBarcodeHatch: "البحث بالاسم، المعرف، الباركود، الدفعة...",
     code: "الرمز",
     productName: "اسم المنتج",
     barcode: "الباركود",
@@ -298,6 +489,7 @@ const translations = {
     lotBatch: "الدفعة",
     expiry: "انتهاء الصلاحية",
     lastSale: "آخر بيع",
+    jod: "د.أ",
     stockQty: "كمية المخزون",
     avgCostPrice: "متوسط سعر التكلفة",
     sellPrice: "سعر البيع",
@@ -359,13 +551,16 @@ const translations = {
     restock: "إعادة تخزين",
     addAnotherBatch: "إضافة دفعة أخرى",
     moreOptions: "خيارات أكثر",
-    needMoreFields:
-      "تحتاج المزيد من الحقول؟ انتقل إلى الصفحة الكاملة",
+    needMoreFields: "تحتاج المزيد من الحقول؟ انتقل إلى الصفحة الكاملة",
+    back: "رجوع",
+    next: "التالي",
+    backToChooseProductSource: "الرجوع لاختيار مصدر المنتج",
     cancel: "إلغاء",
     saveProduct: "حفظ المنتج",
 
     // Stock History Page
-    searchAdjustmentHistory: "البحث بمعرف التعديل، المستخدم، الحالة، أو اسم المنتج...",
+    searchAdjustmentHistory:
+      "البحث بمعرف التعديل، المستخدم، الحالة، أو اسم المنتج...",
     stockId: "معرف المخزون",
     createdAt: "تاريخ الإنشاء",
     createdUser: "المستخدم المنشئ",
@@ -374,11 +569,16 @@ const translations = {
     autoMigrated: "تم الترحيل تلقائياً",
     failedMigrated: "فشل الترحيل",
     viewEditDetails: "عرض وتعديل التفاصيل",
+    viewStockUpdateDetails: "عرض تفاصيل تحديث المخزون",
+    viewStockUpdateDetailsDescription:
+      "راجع صفوف تحديث المخزون بنفس تجربة الجدول المستخدمة في التحديث اليدوي للمخزون.",
+    backToHistory: "العودة إلى السجل",
     exportReport: "تصدير التقرير",
 
     // Import Dialog
     updateStockTitle: "تحديث المخزون",
-    uploadInventoryDescription: "رفع ملف المخزون الخاص بك مع الترحيل المدعوم بالذكاء الاصطناعي",
+    uploadInventoryDescription:
+      "رفع ملف المخزون الخاص بك مع الترحيل المدعوم بالذكاء الاصطناعي",
     uploadProductsFile: "رفع ملف المنتجات الخاص بك",
     excelCsvFormat: "صيغة Excel أو CSV • الحد الأقصى 25 ميجابايت",
     dropFileHere: "ضع ملفك هنا",
@@ -401,7 +601,8 @@ const translations = {
     autoCreateBarcodes: "إنشاء باركود تلقائي",
     generateBarcodesForProducts: "توليد باركود للمنتجات التي لا تحتوي عليه",
     resetOldStock: "إعادة تعيين المخزون القديم",
-    clearExistingStock: "مسح جميع المخزون الموجود للمنتجات في هذا الملف قبل إضافة مخزون جديد",
+    clearExistingStock:
+      "مسح جميع المخزون الموجود للمنتجات في هذا الملف قبل إضافة مخزون جديد",
     setStockToZero: "تعيين المخزون الموجود إلى الصفر قبل الرفع",
     downloadSample: "تنزيل نموذج",
     getTemplate: "احصل على قالب للتعبئة",
@@ -413,7 +614,7 @@ const translations = {
 
     // Filters
     categoryFilter: "الفئة",
-    selectCategory: "اختر الفئة",
+    filterSelectCategory: "اختر الفئة",
     stockRange: "نطاق المخزون",
     selectStockRange: "اختر نطاق المخزون",
     expiryStatus: "حالة الصلاحية",
@@ -428,20 +629,63 @@ const translations = {
     createdUserFilter: "المستخدم المنشئ",
     allUsers: "جميع المستخدمين",
     allStatus: "جميع الحالات",
+
+    // Inventory — product categories (pharmacy sample)
+    categoryGastrointestinal: "الجهاز الهضمي",
+    categoryAntibiotic: "مضادات حيوية",
+    categoryCardiovascular: "القلب والأوعية",
+    categoryVitamins: "فيتامينات ومكملات",
+    categoryOtc: "بدون وصفة والحساسية",
+    categoryDiabetes: "السكري",
+    categoryDermatology: "الأمراض الجلدية",
+    categoryAnalgesic: "مسكنات وخافضات حرارة",
+
+    // Inventory — line statuses
+    productStatusExpiringSoon: "تنتهي قريباً",
+    productStatusActive: "نشط",
+    productStatusOutOfStock: "نفد المخزون",
+
+    // Inventory — table footer (8 demo products)
+    inventoryTablePaginationSummary: "عرض 1 إلى 8 من 8 نتائج",
+    inventoryTableAllOnPage: "جميع الـ 8 نتائج في هذه الصفحة",
+
+    // Update Stock page (stats, adjustments table, footer)
+    statTotalAdjustments: "إجمالي التعديلات",
+    statConfirmed: "مؤكد",
+    statInProgress: "قيد التنفيذ",
+    statFailedCancelled: "فشل / ملغى",
+    adjustmentStatusDraft: "مسودة",
+    adjustmentStatusPending: "قيد الانتظار",
+    adjustmentStatusProcessing: "قيد المعالجة",
+    adjustmentStatusConfirmed: "مؤكد",
+    adjustmentStatusReversal: "عكس المخزون",
+    adjustmentStatusFailed: "فشل",
+    cancelAdjustment: "إلغاء التعديل",
+    actionNotAvailable: "الإجراء غير متاح",
+    adjustmentOverview: "نظرة عامة على التعديلات",
+    adjustmentOverviewDescription: "عرض سريع لأهم نتائج تعديلات المخزون.",
+    adjustmentCountLabel: "السجلات",
+    undoAction: "تراجع عن العملية",
+    adjustmentStatusAiProcessing: "معالجة بالذكاء الاصطناعي",
+    adjustmentStatusCancelled: "ملغى",
+    notAvailableMark: "—",
+    stockHistoryPaginationSummary: "عرض 1–4 من 25 نتيجة",
+    lastStockAdjustmentPrefix: "آخر تعديل للمخزون:",
+    userSarahWilson: "د. سارة ويلسون",
+    userAhmedRashid: "أحمد الراشد",
+    userFatimaHassan: "فاطمة حسن",
+    breadcrumbSeparator: "›",
+    paginationPreviousPage: "الصفحة السابقة",
+    paginationNextPage: "الصفحة التالية",
   },
 };
 
-export function LanguageProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("ar");
 
   useEffect(() => {
     document.documentElement.lang = language;
-    document.documentElement.dir =
-      language === "ar" ? "rtl" : "ltr";
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
   }, [language]);
 
   const toggleLanguage = () => {
@@ -449,17 +693,11 @@ export function LanguageProvider({
   };
 
   const t = (key: string): string => {
-    return (
-      translations[language][
-        key as keyof typeof translations.en
-      ] || key
-    );
+    return translations[language][key as keyof typeof translations.en] || key;
   };
 
   return (
-    <LanguageContext.Provider
-      value={{ language, toggleLanguage, t }}
-    >
+    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -468,9 +706,7 @@ export function LanguageProvider({
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error(
-      "useLanguage must be used within a LanguageProvider",
-    );
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 }

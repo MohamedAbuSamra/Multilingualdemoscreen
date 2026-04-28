@@ -11,28 +11,36 @@
  * See RTL_RULES.md for complete guidelines
  */
 
-import { useState } from 'react';
-import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
-import { Navbar } from './components/Navbar';
-import { InventoryPage } from './components/InventoryPage';
-import { UpdateStockPage } from './components/UpdateStockPage';
-import { ManualUpdateStockPage } from './components/ManualUpdateStockPage';
+import { useState } from "react";
+import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
+import { Navbar } from "./components/Navbar";
+import { InventoryPage } from "./components/InventoryPage";
+import { UpdateStockPage } from "./components/UpdateStockPage";
+import { ManualUpdateStockPage } from "./components/ManualUpdateStockPage";
+import { StockHistoryDetailsPage } from "./components/StockHistoryDetailsPage";
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'products' | 'updateStock' | 'manualUpdateStock'>('products');
+  const [currentPage, setCurrentPage] = useState<
+    "products" | "updateStock" | "manualUpdateStock" | "stockHistoryDetails"
+  >("products");
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isRTL = language === "ar";
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div
+      className="h-screen flex flex-col bg-gray-50 overflow-hidden"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       <Navbar onNavigate={setCurrentPage} currentPage={currentPage} />
       <div className="flex-1 overflow-y-auto">
-        {currentPage === 'products' ? (
+        {currentPage === "products" ? (
           <InventoryPage onNavigate={setCurrentPage} />
-        ) : currentPage === 'updateStock' ? (
+        ) : currentPage === "updateStock" ? (
           <UpdateStockPage onNavigate={setCurrentPage} />
+        ) : currentPage === "manualUpdateStock" ? (
+          <ManualUpdateStockPage onNavigate={setCurrentPage} />
         ) : (
-          <ManualUpdateStockPage />
+          <StockHistoryDetailsPage onNavigate={setCurrentPage} />
         )}
       </div>
     </div>
