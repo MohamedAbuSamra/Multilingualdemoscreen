@@ -72,6 +72,18 @@ interface StockItem {
   reason: string;
 }
 
+interface ProductGroupMeta {
+  key: string;
+  source: StockItemSource;
+  productCode: string;
+  productNameEn: string;
+  productNameAr: string;
+  subtitleEn: string;
+  subtitleAr: string;
+  barcode: string;
+  categoryKey: string;
+}
+
 function buildCoreStockItem(product: AumetCoreProduct): StockItem {
   return {
     id: product.id,
@@ -163,6 +175,7 @@ export function ManualUpdateStockPage({
     null,
   );
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [productGroups, setProductGroups] = useState<ProductGroupMeta[]>([]);
   const [existingBatchPickerOpenKey, setExistingBatchPickerOpenKey] = useState<
     string | null
   >(null);
@@ -198,6 +211,25 @@ export function ManualUpdateStockPage({
   }, [searchQuery, stockItems]);
 
   const addCoreProductsToTable = (products: AumetCoreProduct[]) => {
+    setProductGroups((current) => {
+      const existingCodes = new Set(current.map((item) => item.productCode));
+      const nextGroups = products
+        .filter((product) => !existingCodes.has(product.code))
+        .map((product) => ({
+          key: `core::${product.code}`,
+          source: "core" as const,
+          productCode: product.code,
+          productNameEn: product.nameEn,
+          productNameAr: product.nameAr,
+          subtitleEn: product.subtitleEn,
+          subtitleAr: product.subtitleAr,
+          barcode: product.barcode,
+          categoryKey: product.categoryKey,
+        }));
+
+      return [...current, ...nextGroups];
+    });
+
     setStockItems((current) => {
       const existingCodes = new Set(current.map((item) => item.productCode));
       const nextItems = products
@@ -211,6 +243,25 @@ export function ManualUpdateStockPage({
   const addInventoryProductsToTable = (
     products: SelectedInventoryProductWithBatches[],
   ) => {
+    setProductGroups((current) => {
+      const existingCodes = new Set(current.map((item) => item.productCode));
+      const nextGroups = products
+        .filter(({ product }) => !existingCodes.has(product.code))
+        .map(({ product }) => ({
+          key: `inventory::${product.code}`,
+          source: "inventory" as const,
+          productCode: product.code,
+          productNameEn: product.nameEn,
+          productNameAr: product.nameAr,
+          subtitleEn: product.subtitleEn,
+          subtitleAr: product.subtitleAr,
+          barcode: product.barcode,
+          categoryKey: product.categoryKey,
+        }));
+
+      return [...current, ...nextGroups];
+    });
+
     setStockItems((current) => {
       const existingRowKeys = new Set(
         current.map((item) => `${item.productCode}::${item.batchNumber}`),
@@ -288,6 +339,26 @@ export function ManualUpdateStockPage({
   };
 
   const addCustomProductToTable = (product: ManualCustomProductInput) => {
+    setProductGroups((current) => {
+      const existingCodes = new Set(current.map((item) => item.productCode));
+      if (existingCodes.has(product.productCode)) return current;
+
+      return [
+        ...current,
+        {
+          key: `custom::${product.productCode}`,
+          source: "custom" as const,
+          productCode: product.productCode,
+          productNameEn: product.productNameEn,
+          productNameAr: product.productNameAr,
+          subtitleEn: "",
+          subtitleAr: "",
+          barcode: product.barcode,
+          categoryKey: product.categoryKey,
+        },
+      ];
+    });
+
     setStockItems((current) => {
       const existingCodes = new Set(current.map((item) => item.productCode));
       if (existingCodes.has(product.productCode)) return current;
@@ -298,6 +369,22 @@ export function ManualUpdateStockPage({
 
   const removeStockItem = (id: string) => {
     setStockItems((current) => current.filter((item) => item.id !== id));
+  };
+
+  const removeProductGroup = (groupKey: string) => {
+    const [, productCode] = groupKey.split("::");
+    setProductGroups((current) =>
+      current.filter((item) => item.productCode !== productCode),
+    );
+    setStockItems((current) =>
+      current.filter((item) => item.productCode !== productCode),
+    );
+    setExistingBatchPickerOpenKey((current) =>
+      current === groupKey ? null : current,
+    );
+    setBatchActionMenuOpenKey((current) =>
+      current === groupKey ? null : current,
+    );
   };
 
   const updateStockItem = (
@@ -333,43 +420,61 @@ export function ManualUpdateStockPage({
   };
 
   const groupedVisibleRows = useMemo(() => {
-    const groups = new Map<string, StockItem[]>();
+    const rowsMap = new Map<string, StockItem[]>();
 
     visibleRows.forEach((item) => {
       const key = `${item.source}::${item.productCode}`;
-      const currentGroup = groups.get(key) ?? [];
+      const currentGroup = rowsMap.get(key) ?? [];
       currentGroup.push(item);
-      groups.set(key, currentGroup);
+      rowsMap.set(key, currentGroup);
     });
 
-    return Array.from(groups.entries()).map(([key, items]) => ({
-      key,
-      source: items[0].source,
-      productCode: items[0].productCode,
-      productNameEn: items[0].productNameEn,
-      productNameAr: items[0].productNameAr,
-      subtitleEn: items[0].subtitleEn,
-      subtitleAr: items[0].subtitleAr,
-      barcode: items[0].barcode,
-      categoryKey: items[0].categoryKey,
-      rows: items,
-    }));
-  }, [visibleRows]);
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return productGroups
+      .filter((group) => {
+        if (!normalizedQuery) return true;
+
+        return [
+          group.productCode,
+          group.barcode,
+          group.productNameEn,
+          group.productNameAr,
+          group.subtitleEn,
+          group.subtitleAr,
+        ].some((value) => value.toLowerCase().includes(normalizedQuery));
+      })
+      .map((group) => ({
+        ...group,
+        rows: rowsMap.get(group.key) ?? [],
+      }));
+  }, [productGroups, searchQuery, visibleRows]);
 
   const addNewBatchRow = (groupKey: string) => {
     const [, productCode] = groupKey.split("::");
     const baseRow = stockItems.find((item) => item.productCode === productCode);
-    if (!baseRow) return;
+    const groupMeta = productGroups.find((group) => group.key === groupKey);
+    if (!baseRow && !groupMeta) return;
 
     setStockItems((current) => [
       ...current,
       {
-        ...baseRow,
-        id: `${baseRow.source}-${baseRow.productCode}-new-${Date.now()}-${Math.random()}`,
+        id: `${(baseRow?.source ?? groupMeta?.source) || "inventory"}-${productCode}-new-${Date.now()}-${Math.random()}`,
+        source: (baseRow?.source ??
+          groupMeta?.source ??
+          "inventory") as StockItemSource,
+        productCode,
+        productNameEn: baseRow?.productNameEn ?? groupMeta?.productNameEn ?? "",
+        productNameAr: baseRow?.productNameAr ?? groupMeta?.productNameAr ?? "",
+        subtitleEn: baseRow?.subtitleEn ?? groupMeta?.subtitleEn ?? "",
+        subtitleAr: baseRow?.subtitleAr ?? groupMeta?.subtitleAr ?? "",
+        barcode: baseRow?.barcode ?? groupMeta?.barcode ?? "",
+        categoryKey: baseRow?.categoryKey ?? groupMeta?.categoryKey ?? "",
         batchNumber: "",
         expiry: "",
         warehouseZone: "",
         currentStock: 0,
+        stockTypeUpdate: "stockIn",
         newStockQty: "",
         avgCost: "",
         sellPrice: "",
@@ -401,7 +506,8 @@ export function ManualUpdateStockPage({
       (item) => item.code === productCode,
     );
     const baseRow = stockItems.find((item) => item.productCode === productCode);
-    if (!normalizedProduct || !baseRow) return;
+    const groupMeta = productGroups.find((group) => group.key === groupKey);
+    if (!normalizedProduct || (!baseRow && !groupMeta)) return;
 
     const existingBatchNumbers = new Set(
       stockItems
@@ -413,12 +519,22 @@ export function ManualUpdateStockPage({
       .filter((batch) => selectedBatchIds.includes(batch.id))
       .filter((batch) => !existingBatchNumbers.has(batch.batchNumber))
       .map((batch) => ({
-        ...baseRow,
-        id: `${baseRow.source}-${productCode}-${batch.id}-${Date.now()}`,
+        id: `${(baseRow?.source ?? groupMeta?.source) || "inventory"}-${productCode}-${batch.id}-${Date.now()}`,
+        source: (baseRow?.source ??
+          groupMeta?.source ??
+          "inventory") as StockItemSource,
+        productCode,
+        productNameEn: baseRow?.productNameEn ?? groupMeta?.productNameEn ?? "",
+        productNameAr: baseRow?.productNameAr ?? groupMeta?.productNameAr ?? "",
+        subtitleEn: baseRow?.subtitleEn ?? groupMeta?.subtitleEn ?? "",
+        subtitleAr: baseRow?.subtitleAr ?? groupMeta?.subtitleAr ?? "",
+        barcode: baseRow?.barcode ?? groupMeta?.barcode ?? "",
+        categoryKey: baseRow?.categoryKey ?? groupMeta?.categoryKey ?? "",
         batchNumber: batch.batchNumber,
         expiry: batch.expiry,
         warehouseZone: batch.warehouseZone,
         currentStock: Number(batch.stockQty) || 0,
+        stockTypeUpdate: "stockIn",
         newStockQty: "",
         avgCost: batch.avgCost,
         sellPrice: batch.sellPrice,
@@ -440,7 +556,8 @@ export function ManualUpdateStockPage({
       (item) => item.code === productCode,
     );
     const baseRow = stockItems.find((item) => item.productCode === productCode);
-    if (!normalizedProduct || !baseRow) return;
+    const groupMeta = productGroups.find((group) => group.key === groupKey);
+    if (!normalizedProduct || (!baseRow && !groupMeta)) return;
 
     const targetBatch = normalizedProduct.batches.find(
       (batch) => batch.id === batchId,
@@ -458,12 +575,22 @@ export function ManualUpdateStockPage({
     setStockItems((current) => [
       ...current,
       {
-        ...baseRow,
-        id: `${baseRow.source}-${productCode}-${targetBatch.id}-${Date.now()}`,
+        id: `${(baseRow?.source ?? groupMeta?.source) || "inventory"}-${productCode}-${targetBatch.id}-${Date.now()}`,
+        source: (baseRow?.source ??
+          groupMeta?.source ??
+          "inventory") as StockItemSource,
+        productCode,
+        productNameEn: baseRow?.productNameEn ?? groupMeta?.productNameEn ?? "",
+        productNameAr: baseRow?.productNameAr ?? groupMeta?.productNameAr ?? "",
+        subtitleEn: baseRow?.subtitleEn ?? groupMeta?.subtitleEn ?? "",
+        subtitleAr: baseRow?.subtitleAr ?? groupMeta?.subtitleAr ?? "",
+        barcode: baseRow?.barcode ?? groupMeta?.barcode ?? "",
+        categoryKey: baseRow?.categoryKey ?? groupMeta?.categoryKey ?? "",
         batchNumber: targetBatch.batchNumber,
         expiry: targetBatch.expiry,
         warehouseZone: targetBatch.warehouseZone,
         currentStock: Number(targetBatch.stockQty) || 0,
+        stockTypeUpdate: "stockIn",
         newStockQty: "",
         avgCost: targetBatch.avgCost,
         sellPrice: targetBatch.sellPrice,
@@ -638,7 +765,7 @@ export function ManualUpdateStockPage({
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-visible">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
@@ -678,46 +805,76 @@ export function ManualUpdateStockPage({
                 </div>
               </div>
 
-              <div className="p-4 space-y-4">
+              <div className="p-3 space-y-3 bg-gray-50">
                 {groupedVisibleRows.map((group) => (
                   <div
                     key={group.key}
-                    className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
+                    className={`bg-white border border-gray-200 rounded-xl overflow-visible shadow-sm relative ${
+                      batchActionMenuOpenKey === group.key ? "z-[1000]" : "z-0"
+                    }`}
                   >
-                    <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-start justify-between gap-3 flex-wrap">
-                      <div className={isRTL ? "text-right" : "text-left"}>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-sm font-semibold text-gray-900">
+                    <div
+                      className={`px-4 py-2.5 flex items-center justify-between gap-3 relative ${
+                        batchActionMenuOpenKey === group.key
+                          ? "z-[1001]"
+                          : "z-0"
+                      }`}
+                    >
+                      <div
+                        className={`min-w-0 flex-1 ${isRTL ? "text-right" : "text-left"}`}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <div className="text-sm font-semibold text-gray-900 truncate">
                             {language === "ar"
                               ? group.productNameAr
                               : group.productNameEn}
                           </div>
-                          <Badge className="rounded-full px-2 py-0.5 text-[10px] bg-gray-100 text-gray-700 hover:bg-gray-100">
+                          <Badge className="rounded-full px-2 py-0.5 text-[10px] bg-gray-100 text-gray-700 hover:bg-gray-100 h-5 shrink-0">
                             {t(`productSource.${group.source}`)}
                           </Badge>
-                          <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 rounded-full px-2 py-0.5 text-[10px]">
+                          <Badge
+                            className={`rounded-full px-2 py-0.5 text-[10px] h-5 shrink-0 ${
+                              group.source === "core"
+                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                : "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                            }`}
+                          >
+                            {group.source === "core"
+                              ? t("linked")
+                              : t("notLinked")}
+                          </Badge>
+                          <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 rounded-full px-2 py-0.5 text-[10px] h-5 shrink-0">
                             {group.rows.length} {t("batches")}
                           </Badge>
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
-                          <span dir="ltr">{group.productCode}</span>
-                          <span>•</span>
-                          <span dir="ltr">{group.barcode}</span>
-                          <span>•</span>
-                          <span>{t(group.categoryKey)}</span>
+                        <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap min-w-0">
+                          <span dir="ltr" className="shrink-0">
+                            {group.productCode}
+                          </span>
+                          <span className="shrink-0">•</span>
+                          <span dir="ltr" className="truncate">
+                            {group.barcode}
+                          </span>
+                          <span className="shrink-0">•</span>
+                          <span className="truncate">
+                            {t(group.categoryKey)}
+                          </span>
+                          {(language === "ar"
+                            ? group.subtitleAr
+                            : group.subtitleEn) && (
+                            <>
+                              <span className="shrink-0">•</span>
+                              <span className="text-[11px] text-gray-400 truncate">
+                                {language === "ar"
+                                  ? group.subtitleAr
+                                  : group.subtitleEn}
+                              </span>
+                            </>
+                          )}
                         </div>
-                        {(language === "ar"
-                          ? group.subtitleAr
-                          : group.subtitleEn) && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {language === "ar"
-                              ? group.subtitleAr
-                              : group.subtitleEn}
-                          </div>
-                        )}
                       </div>
 
-                      <div className="flex items-center gap-2 flex-wrap relative">
+                      <div className="flex items-center gap-2 shrink-0 relative z-[9999]">
                         {(() => {
                           const normalizedProduct =
                             group.source === "inventory"
@@ -751,15 +908,24 @@ export function ManualUpdateStockPage({
                                   );
                                   setExistingBatchPickerOpenKey(null);
                                 }}
-                                className="h-9 px-4 rounded-full border-gray-300 gap-2"
+                                className="h-8 px-3 rounded-full border-gray-300 gap-2 text-xs shrink-0 whitespace-nowrap"
                               >
                                 <Plus className="size-4" />
                                 {t("addBatch")}
                               </Button>
 
+                              <Button
+                                variant="outline"
+                                onClick={() => removeProductGroup(group.key)}
+                                className="h-8 px-3 rounded-full border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 gap-2 text-xs shrink-0 whitespace-nowrap"
+                              >
+                                <Trash2 className="size-4" />
+                                {t("deleteProduct")}
+                              </Button>
+
                               {availableBatches.length > 0 &&
                                 batchActionMenuOpenKey === group.key && (
-                                  <div className="absolute top-11 end-0 z-10 w-56 rounded-2xl border border-gray-200 bg-white shadow-lg p-2 space-y-1">
+                                  <div className="absolute top-10 end-0 z-[99999] w-56 rounded-2xl border border-gray-200 bg-white shadow-2xl p-2 space-y-1">
                                     {existingBatchPickerOpenKey ===
                                     group.key ? (
                                       <>
@@ -867,253 +1033,268 @@ export function ManualUpdateStockPage({
                       </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-b border-gray-200 bg-white">
-                            <TableHead
-                              className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
-                            >
-                              {t("batchNumber")}
-                            </TableHead>
-                            <TableHead
-                              className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
-                            >
-                              {t("expiry")}
-                            </TableHead>
-                            <TableHead
-                              className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
-                            >
-                              {t("warehouseLocation")}
-                            </TableHead>
-                            <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
-                              {t("currentStock")}
-                            </TableHead>
-                            <TableHead
-                              className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
-                            >
-                              {t("stockTypeUpdate")}
-                            </TableHead>
-                            <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
-                              {t("newStockQty")}
-                            </TableHead>
-                            <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
-                              {t("cost")}
-                            </TableHead>
-                            <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
-                              {t("sellingPrice")}
-                            </TableHead>
-                            <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
-                              {t("newStockLevel")}
-                            </TableHead>
-                            <TableHead
-                              className={`text-xs font-semibold text-gray-700 h-11 min-w-[220px] ${isRTL ? "text-right" : "text-left"}`}
-                            >
-                              {t("reason")}
-                            </TableHead>
-                            <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
-                              {t("actions")}
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {group.rows.map((item) => {
-                            const nextLevel =
-                              item.stockTypeUpdate === "stockIn"
-                                ? item.currentStock +
-                                  (Number(item.newStockQty) || 0)
-                                : Math.max(
-                                    0,
-                                    item.currentStock -
-                                      (Number(item.newStockQty) || 0),
-                                  );
-
-                            return (
-                              <TableRow
-                                key={item.id}
-                                className="border-b border-gray-200 hover:bg-gray-50"
+                    {group.rows.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-b border-gray-200 bg-white">
+                              <TableHead
+                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
                               >
-                                <TableCell
-                                  className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                {t("batchNumber")}
+                              </TableHead>
+                              <TableHead
+                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                              >
+                                {t("expiry")}
+                              </TableHead>
+                              <TableHead
+                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                              >
+                                {t("warehouseLocation")}
+                              </TableHead>
+                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
+                                {t("currentStock")}
+                              </TableHead>
+                              <TableHead
+                                className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                              >
+                                {t("stockTypeUpdate")}
+                              </TableHead>
+                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
+                                {t("newStockQty")}
+                              </TableHead>
+                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
+                                {t("cost")}
+                              </TableHead>
+                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
+                                {t("sellingPrice")}
+                              </TableHead>
+                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
+                                {t("newStockLevel")}
+                              </TableHead>
+                              <TableHead
+                                className={`text-xs font-semibold text-gray-700 h-11 min-w-[220px] ${isRTL ? "text-right" : "text-left"}`}
+                              >
+                                {t("reason")}
+                              </TableHead>
+                              <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center">
+                                {t("actions")}
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {group.rows.map((item) => {
+                              const nextLevel =
+                                item.stockTypeUpdate === "stockIn"
+                                  ? item.currentStock +
+                                    (Number(item.newStockQty) || 0)
+                                  : Math.max(
+                                      0,
+                                      item.currentStock -
+                                        (Number(item.newStockQty) || 0),
+                                    );
+
+                              return (
+                                <TableRow
+                                  key={item.id}
+                                  className="border-b border-gray-200 hover:bg-gray-50"
                                 >
-                                  <Input
-                                    value={item.batchNumber}
-                                    onChange={(e) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "batchNumber",
-                                        e.target.value,
-                                      )
-                                    }
-                                    placeholder={t("newBatch")}
-                                    dir="ltr"
-                                    className="h-10 rounded-full min-w-[140px]"
-                                  />
-                                </TableCell>
-                                <TableCell
-                                  className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
-                                >
-                                  <Input
-                                    value={item.expiry}
-                                    onChange={(e) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "expiry",
-                                        e.target.value,
-                                      )
-                                    }
-                                    placeholder="YYYY-MM"
-                                    dir="ltr"
-                                    className="h-10 rounded-full min-w-[120px]"
-                                  />
-                                </TableCell>
-                                <TableCell
-                                  className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
-                                >
-                                  <Input
-                                    value={item.warehouseZone}
-                                    onChange={(e) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "warehouseZone",
-                                        e.target.value,
-                                      )
-                                    }
-                                    placeholder={t("warehouseLocation")}
-                                    dir={isRTL ? "rtl" : "ltr"}
-                                    className={`h-10 rounded-full min-w-[140px] ${isRTL ? "text-right" : "text-left"}`}
-                                  />
-                                </TableCell>
-                                <TableCell className="py-3 text-center">
-                                  <div className="inline-flex min-w-[88px] items-center justify-center rounded-md bg-gray-50 px-2 py-1 text-sm font-semibold text-gray-900">
-                                    {item.currentStock.toLocaleString("en-GB")}
-                                  </div>
-                                </TableCell>
-                                <TableCell
-                                  className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
-                                >
-                                  <Select
-                                    value={item.stockTypeUpdate}
-                                    onValueChange={(value) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "stockTypeUpdate",
-                                        value,
-                                      )
-                                    }
+                                  <TableCell
+                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
                                   >
-                                    <SelectTrigger
-                                      className={`w-[150px] rounded-full border-gray-300 h-10 text-sm ${isRTL ? "text-right" : "text-left"}`}
+                                    <Input
+                                      value={item.batchNumber}
+                                      onChange={(e) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "batchNumber",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder={t("newBatch")}
+                                      dir="ltr"
+                                      className="h-10 rounded-full min-w-[140px]"
+                                    />
+                                  </TableCell>
+                                  <TableCell
+                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                  >
+                                    <Input
+                                      value={item.expiry}
+                                      onChange={(e) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "expiry",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="YYYY-MM"
+                                      dir="ltr"
+                                      className="h-10 rounded-full min-w-[120px]"
+                                    />
+                                  </TableCell>
+                                  <TableCell
+                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                  >
+                                    <Input
+                                      value={item.warehouseZone}
+                                      onChange={(e) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "warehouseZone",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder={t("warehouseLocation")}
                                       dir={isRTL ? "rtl" : "ltr"}
+                                      className={`h-10 rounded-full min-w-[140px] ${isRTL ? "text-right" : "text-left"}`}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="py-3 text-center">
+                                    <div className="inline-flex min-w-[88px] items-center justify-center rounded-md bg-gray-50 px-2 py-1 text-sm font-semibold text-gray-900">
+                                      {item.currentStock.toLocaleString(
+                                        "en-GB",
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell
+                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                                  >
+                                    <Select
+                                      value={item.stockTypeUpdate}
+                                      onValueChange={(value) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "stockTypeUpdate",
+                                          value,
+                                        )
+                                      }
                                     >
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                      <SelectItem value="stockIn">
-                                        {t("stockIn")}
-                                      </SelectItem>
-                                      <SelectItem value="stockOut">
-                                        {t("stockOut")}
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell className="py-3 text-center">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={item.newStockQty}
-                                    onChange={(e) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "newStockQty",
-                                        e.target.value,
-                                      )
-                                    }
-                                    dir="ltr"
-                                    className="w-[120px] h-10 rounded-full text-center mx-auto"
-                                  />
-                                </TableCell>
-                                <TableCell className="py-3 text-center">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={item.avgCost}
-                                    onChange={(e) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "avgCost",
-                                        e.target.value,
-                                      )
-                                    }
-                                    dir="ltr"
-                                    className="w-[120px] h-10 rounded-full text-center mx-auto"
-                                  />
-                                </TableCell>
-                                <TableCell className="py-3 text-center">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={item.sellPrice}
-                                    onChange={(e) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "sellPrice",
-                                        e.target.value,
-                                      )
-                                    }
-                                    dir="ltr"
-                                    className="w-[120px] h-10 rounded-full text-center mx-auto"
-                                  />
-                                </TableCell>
-                                <TableCell className="py-3 text-center">
-                                  <div
-                                    className={`inline-flex min-w-[88px] items-center justify-center rounded-md px-2 py-1 text-sm font-semibold ${
-                                      nextLevel > item.currentStock
-                                        ? "bg-green-50 text-green-700"
-                                        : nextLevel < item.currentStock
-                                          ? "bg-red-50 text-red-700"
-                                          : "bg-gray-50 text-gray-900"
-                                    }`}
+                                      <SelectTrigger
+                                        className={`w-[150px] rounded-full border-gray-300 h-10 text-sm ${isRTL ? "text-right" : "text-left"}`}
+                                        dir={isRTL ? "rtl" : "ltr"}
+                                      >
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent className="rounded-xl">
+                                        <SelectItem value="stockIn">
+                                          {t("stockIn")}
+                                        </SelectItem>
+                                        <SelectItem value="stockOut">
+                                          {t("stockOut")}
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                  <TableCell className="py-3 text-center">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={item.newStockQty}
+                                      onChange={(e) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "newStockQty",
+                                          e.target.value,
+                                        )
+                                      }
+                                      dir="ltr"
+                                      className="w-[120px] h-10 rounded-full text-center mx-auto"
+                                    />
+                                  </TableCell>
+                                  <TableCell className="py-3 text-center">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={item.avgCost}
+                                      onChange={(e) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "avgCost",
+                                          e.target.value,
+                                        )
+                                      }
+                                      dir="ltr"
+                                      className="w-[120px] h-10 rounded-full text-center mx-auto"
+                                    />
+                                  </TableCell>
+                                  <TableCell className="py-3 text-center">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={item.sellPrice}
+                                      onChange={(e) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "sellPrice",
+                                          e.target.value,
+                                        )
+                                      }
+                                      dir="ltr"
+                                      className="w-[120px] h-10 rounded-full text-center mx-auto"
+                                    />
+                                  </TableCell>
+                                  <TableCell className="py-3 text-center">
+                                    <div
+                                      className={`inline-flex min-w-[88px] items-center justify-center rounded-md px-2 py-1 text-sm font-semibold ${
+                                        nextLevel > item.currentStock
+                                          ? "bg-green-50 text-green-700"
+                                          : nextLevel < item.currentStock
+                                            ? "bg-red-50 text-red-700"
+                                            : "bg-gray-50 text-gray-900"
+                                      }`}
+                                    >
+                                      {nextLevel.toLocaleString("en-GB")}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell
+                                    className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
                                   >
-                                    {nextLevel.toLocaleString("en-GB")}
-                                  </div>
-                                </TableCell>
-                                <TableCell
-                                  className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
-                                >
-                                  <Input
-                                    value={item.reason}
-                                    onChange={(e) =>
-                                      updateStockItem(
-                                        item.id,
-                                        "reason",
-                                        e.target.value,
-                                      )
-                                    }
-                                    placeholder={t("enterAdjustmentReason")}
-                                    dir={isRTL ? "rtl" : "ltr"}
-                                    className={`h-10 rounded-full min-w-[220px] ${isRTL ? "text-right" : "text-left"}`}
-                                  />
-                                </TableCell>
-                                <TableCell className="py-3 text-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeStockItem(item.id)}
-                                    className="size-8 p-0 hover:bg-red-50 text-red-600 rounded-full"
-                                  >
-                                    <Trash2 className="size-4" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
+                                    <Input
+                                      value={item.reason}
+                                      onChange={(e) =>
+                                        updateStockItem(
+                                          item.id,
+                                          "reason",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder={t("enterAdjustmentReason")}
+                                      dir={isRTL ? "rtl" : "ltr"}
+                                      className={`h-10 rounded-full min-w-[220px] ${isRTL ? "text-right" : "text-left"}`}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="py-3 text-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeStockItem(item.id)}
+                                      className="size-8 p-0 hover:bg-red-50 text-red-600 rounded-full"
+                                    >
+                                      <Trash2 className="size-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="px-4 py-6 text-center border-t border-gray-100 bg-white">
+                        <div className="max-w-md mx-auto">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {t("noBatchRowsYet")}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {t("addExistingOrCreateNewBatch")}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
