@@ -77,6 +77,26 @@ const translations = {
       "This product code is already added to the table.",
     customProductWillBeAddedToTable:
       "This product will be added as a normal editable row in the manual stock table.",
+    batches: "Batches",
+    expandBatches: "Expand batches",
+    collapseBatches: "Collapse batches",
+    productMasterAndBatches: "Product Master & Batches",
+    editProductAndBatchDetails:
+      "Edit product identity and review its batch-level inventory details.",
+    selectBatchesOptional: "Select batches (optional)",
+    leaveWithoutBatchesToCreateNew:
+      "Leave without choosing batches to create a new batch in manual stock.",
+    addNewBatch: "Add New Batch",
+    newBatch: "New Batch",
+    batchNumber: "Batch Number",
+    batchDetails: "Batch Details",
+    existingBatchesCanBeEdited:
+      "Edit existing batches, remove the ones you do not want, or add a new batch.",
+    addBatch: "Add Batch",
+    editExistingBatch: "Edit Existing Batch",
+    selectExistingBatch: "Select Existing Batch",
+    chooseBatchToEditAndAdd: "Choose a batch to edit and add it instantly.",
+
     productSource: "Source",
     "productSource.core": "Aumet Core",
     "productSource.inventory": "My Products",
@@ -406,6 +426,26 @@ const translations = {
     productCodeAlreadyExists: "تمت إضافة رمز هذا المنتج بالفعل إلى الجدول.",
     customProductWillBeAddedToTable:
       "سيتم إضافة هذا المنتج كصف طبيعي قابل للتعديل داخل جدول التحديث اليدوي.",
+    batches: "الدفعات",
+    expandBatches: "توسيع الدفعات",
+    collapseBatches: "طي الدفعات",
+    productMasterAndBatches: "بيانات المنتج والدفعات",
+    editProductAndBatchDetails:
+      "قم بتعديل بيانات المنتج ومراجعة تفاصيل المخزون على مستوى الدفعات.",
+    selectBatchesOptional: "اختر الدفعات (اختياري)",
+    leaveWithoutBatchesToCreateNew:
+      "اترك الاختيار بدون دفعات لإنشاء دفعة جديدة في التحديث اليدوي للمخزون.",
+    addNewBatch: "إضافة دفعة جديدة",
+    newBatch: "دفعة جديدة",
+    batchNumber: "رقم الدفعة",
+    batchDetails: "تفاصيل الدفعة",
+    existingBatchesCanBeEdited:
+      "قم بتعديل الدفعات الحالية، أو إزالة ما لا تريد، أو إضافة دفعة جديدة.",
+    addBatch: "إضافة دفعة",
+    editExistingBatch: "تعديل دفعة موجودة",
+    selectExistingBatch: "اختر دفعة موجودة",
+    chooseBatchToEditAndAdd: "اختر دفعة لتعديلها وإضافتها مباشرة.",
+
     productSource: "المصدر",
     "productSource.core": "Aumet Core",
     "productSource.inventory": "منتجاتي",

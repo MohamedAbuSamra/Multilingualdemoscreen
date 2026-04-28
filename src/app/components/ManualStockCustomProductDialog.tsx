@@ -73,7 +73,14 @@ export function ManualStockCustomProductDialog({
   const [form, setForm] = useState<ManualCustomProductInput>(INITIAL_FORM);
 
   const normalizedExistingCodes = useMemo(
-    () => new Set(existingCodes.map((code) => code.trim().toLowerCase())),
+    () =>
+      new Set(
+        existingCodes
+          .filter((code): code is string => typeof code === "string")
+          .map((code) => code.trim())
+          .filter(Boolean)
+          .map((code) => code.toLowerCase()),
+      ),
     [existingCodes],
   );
 
