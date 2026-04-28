@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -43,7 +43,8 @@ interface InventoryPageProps {
       | "updateStock"
       | "manualUpdateStock"
       | "stockHistoryDetails"
-      | "fullProductCreation",
+      | "fullProductCreation"
+      | "viewProduct"
   ) => void;
 }
 
@@ -52,6 +53,36 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [expandedProductIds, setExpandedProductIds] = useState<string[]>([]);
+  const [rowActionMenu, setRowActionMenu] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        !target.closest("[data-row-action-trigger]") &&
+        !target.closest("[data-row-action-panel]")
+      ) {
+        setRowActionMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  useEffect(() => {
+    const closeOnViewportChange = () => setRowActionMenu(null);
+    window.addEventListener("resize", closeOnViewportChange);
+    window.addEventListener("scroll", closeOnViewportChange, true);
+    return () => {
+      window.removeEventListener("resize", closeOnViewportChange);
+      window.removeEventListener("scroll", closeOnViewportChange, true);
+    };
+  }, []);
 
   const products = useMemo(
     () =>
@@ -122,7 +153,64 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
             <History className="size-4" />
             {t("stockHistory")}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-9 gap-2 px-4 text-sm rounded-full border-gray-300"
+              >
+                <MoreVertical className="size-4" />
+                {t("actions")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align={language === "ar" ? "start" : "end"}
+              className="rounded-xl"
+            >
+              <DropdownMenuItem
+                className="cursor-pointer text-start"
+                onClick={() => onNavigate("viewProduct")}
+              >
+                {t("fullViewPageTitle")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer text-start"
+                onClick={() => onNavigate("manualUpdateStock")}
+              >
+                {t("manualUpdateStock")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
+        {rowActionMenu && (
+          <div
+            data-row-action-panel
+            className="fixed z-[10000] min-w-44 rounded-xl border border-gray-200 bg-white shadow-xl p-1.5"
+            style={{ left: rowActionMenu.x, top: rowActionMenu.y }}
+          >
+            <button
+              type="button"
+              className="w-full text-start px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+              onClick={() => {
+                setRowActionMenu(null);
+                onNavigate("viewProduct");
+              }}
+            >
+              {t("fullViewPageTitle")}
+            </button>
+            <button
+              type="button"
+              className="w-full text-start px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+              onClick={() => {
+                setRowActionMenu(null);
+                onNavigate("manualUpdateStock");
+              }}
+            >
+              {t("manualUpdateStock")}
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -343,11 +431,8 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                   const isExpanded = expandedProductIds.includes(product.id);
 
                   return (
-                    <>
-                      <TableRow
-                        key={product.id}
-                        className="border-b border-gray-200 hover:bg-gray-50"
-                      >
+                    <React.Fragment key={product.id}>
+                      <TableRow className="border-b border-gray-200 hover:bg-gray-50">
                         <TableCell className="py-3">
                           <button
                             type="button"
@@ -434,18 +519,38 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                           )}
                         </TableCell>
                         <TableCell className="py-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="size-8 p-0 hover:bg-gray-100 rounded-full"
-                          >
-                            <MoreVertical className="size-4 text-gray-600" />
-                          </Button>
+                          <div className="inline-block">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="size-8 p-0 hover:bg-gray-100 rounded-full"
+                              data-row-action-trigger
+                              onClick={(event) => {
+                                const targetRect =
+                                  event.currentTarget.getBoundingClientRect();
+                                const menuWidth = 176;
+                                const clampedX = Math.min(
+                                  window.innerWidth - menuWidth - 8,
+                                  Math.max(8, targetRect.right - menuWidth),
+                                );
+                                const nextY = targetRect.bottom + 8;
+                                setRowActionMenu((current) =>
+                                  current?.id === product.id
+                                    ? null
+                                    : { id: product.id, x: clampedX, y: nextY },
+                                );
+                              }}
+                            >
+                              <MoreVertical className="size-4 text-gray-600" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
-
-                      {isExpanded && (
-                        <TableRow className="bg-gray-50/70 border-b border-gray-200">
+                      {isExpanded ? (
+                        <TableRow
+                          key={`${product.id}-expanded`}
+                          className="bg-gray-50/70 border-b border-gray-200"
+                        >
                           <TableCell colSpan={15} className="p-0">
                             <div className="px-5 py-4">
                               <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -513,8 +618,8 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                             </div>
                           </TableCell>
                         </TableRow>
-                      )}
-                    </>
+                      ) : null}
+                    </React.Fragment>
                   );
                 })}
               </TableBody>

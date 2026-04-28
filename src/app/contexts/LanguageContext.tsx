@@ -332,6 +332,20 @@ const translations = {
     fullCreateProTipTitle: "Pro Tip",
     fullCreateProTipDescription:
       "Complete all fields to ensure optimal inventory tracking and reporting accuracy.",
+    fullViewPageTitle: "View Product",
+    fullViewPageSubtitle:
+      "Review complete product details. Switch to edit mode to update data.",
+    fullViewEnableEdit: "Enable Edit",
+    fullViewSaveChanges: "Save Changes",
+    fullViewReadModeHint:
+      "Read mode is active. Click Enable Edit to modify product details.",
+    fullViewBatchesManagement: "Batches Management",
+    fullViewBarcodeManagement: "Barcode Management",
+    fullViewAddBarcode: "Add Another Barcode",
+    fullViewPrimaryBarcode: "Primary Barcode",
+    fullViewBoxBarcode: "Box Barcode",
+    fullViewEditModeEnabled: "Edit mode enabled",
+    fullViewReadModeEnabled: "Read mode enabled",
 
     // Stock History Page
     searchAdjustmentHistory:
@@ -766,6 +780,20 @@ const translations = {
     fullCreateProTipTitle: "نصيحة",
     fullCreateProTipDescription:
       "إكمال كل الحقول يساعد على تتبع المخزون بدقة وتحسين تقارير الأداء.",
+    fullViewPageTitle: "عرض المنتج",
+    fullViewPageSubtitle:
+      "راجع تفاصيل المنتج كاملة. فعّل وضع التعديل لتحديث البيانات.",
+    fullViewEnableEdit: "تفعيل التعديل",
+    fullViewSaveChanges: "حفظ التغييرات",
+    fullViewReadModeHint:
+      "وضع القراءة مفعّل. اضغط تفعيل التعديل لتغيير بيانات المنتج.",
+    fullViewBatchesManagement: "إدارة الدفعات",
+    fullViewBarcodeManagement: "إدارة الباركود",
+    fullViewAddBarcode: "إضافة باركود آخر",
+    fullViewPrimaryBarcode: "الباركود الرئيسي",
+    fullViewBoxBarcode: "باركود العلبة",
+    fullViewEditModeEnabled: "وضع التعديل مفعّل",
+    fullViewReadModeEnabled: "وضع القراءة مفعّل",
 
     // Stock History Page
     searchAdjustmentHistory:

@@ -20,13 +20,15 @@ interface NavbarProps {
       | 'manualUpdateStock'
       | 'stockHistoryDetails'
       | 'fullProductCreation'
+      | 'viewProduct'
   ) => void;
   currentPage:
     | 'products'
     | 'updateStock'
     | 'manualUpdateStock'
     | 'stockHistoryDetails'
-    | 'fullProductCreation';
+    | 'fullProductCreation'
+    | 'viewProduct';
 }
 
 export function Navbar({ onNavigate, currentPage }: NavbarProps) {
