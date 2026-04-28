@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Search, Scan, Barcode, Sparkles, ChevronDown, Package, Plus, Trash2, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -14,6 +14,14 @@ import {
 interface CreateProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onNavigate?: (
+    page:
+      | "products"
+      | "updateStock"
+      | "manualUpdateStock"
+      | "stockHistoryDetails"
+      | "fullProductCreation",
+  ) => void;
 }
 
 interface Batch {
@@ -27,7 +35,11 @@ interface Batch {
   reason: string;
 }
 
-export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogProps) {
+export function CreateProductDialog({
+  open,
+  onOpenChange,
+  onNavigate,
+}: CreateProductDialogProps) {
   const { t, language } = useLanguage();
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [productName, setProductName] = useState('');
@@ -389,8 +401,12 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
         {/* Footer */}
         <div className={`px-6 py-4 border-t border-gray-200 bg-white rounded-b-3xl flex items-center justify-between `}>
           <button
-            onClick={() => setShowMoreDetails(!showMoreDetails)}
-            className={`flex items-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors `}
+            onClick={() => {
+              setShowMoreDetails((prev) => !prev);
+              onOpenChange(false);
+              onNavigate?.("fullProductCreation");
+            }}
+            className={`flex items-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors cursor-pointer `}
           >
             {t('needMoreFields')}
           </button>

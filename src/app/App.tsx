@@ -18,10 +18,15 @@ import { InventoryPage } from "./components/InventoryPage";
 import { UpdateStockPage } from "./components/UpdateStockPage";
 import { ManualUpdateStockPage } from "./components/ManualUpdateStockPage";
 import { StockHistoryDetailsPage } from "./components/StockHistoryDetailsPage";
+import { FullProductCreationPage } from "./components/FullProductCreationPage";
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<
-    "products" | "updateStock" | "manualUpdateStock" | "stockHistoryDetails"
+    | "products"
+    | "updateStock"
+    | "manualUpdateStock"
+    | "stockHistoryDetails"
+    | "fullProductCreation"
   >("products");
   const { language } = useLanguage();
   const isRTL = language === "ar";
@@ -39,8 +44,10 @@ function AppContent() {
           <UpdateStockPage onNavigate={setCurrentPage} />
         ) : currentPage === "manualUpdateStock" ? (
           <ManualUpdateStockPage onNavigate={setCurrentPage} />
-        ) : (
+        ) : currentPage === "stockHistoryDetails" ? (
           <StockHistoryDetailsPage onNavigate={setCurrentPage} />
+        ) : (
+          <FullProductCreationPage onNavigate={setCurrentPage} />
         )}
       </div>
     </div>

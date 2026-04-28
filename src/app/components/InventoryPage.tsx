@@ -37,7 +37,14 @@ import {
 } from "../data/pharmacyInventoryProducts";
 
 interface InventoryPageProps {
-  onNavigate: (page: "products" | "updateStock") => void;
+  onNavigate: (
+    page:
+      | "products"
+      | "updateStock"
+      | "manualUpdateStock"
+      | "stockHistoryDetails"
+      | "fullProductCreation",
+  ) => void;
 }
 
 export function InventoryPage({ onNavigate }: InventoryPageProps) {
@@ -96,6 +103,7 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
       <CreateProductDialog
         open={createProductOpen}
         onOpenChange={setCreateProductOpen}
+        onNavigate={onNavigate}
       />
       <div className="p-6 space-y-5 flex-1">
         <div className="flex items-center gap-3">

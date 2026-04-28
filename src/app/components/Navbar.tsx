@@ -13,8 +13,20 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { CreateProductDialog } from './CreateProductDialog';
 
 interface NavbarProps {
-  onNavigate: (page: 'products' | 'updateStock' | 'manualUpdateStock') => void;
-  currentPage: 'products' | 'updateStock' | 'manualUpdateStock';
+  onNavigate: (
+    page:
+      | 'products'
+      | 'updateStock'
+      | 'manualUpdateStock'
+      | 'stockHistoryDetails'
+      | 'fullProductCreation'
+  ) => void;
+  currentPage:
+    | 'products'
+    | 'updateStock'
+    | 'manualUpdateStock'
+    | 'stockHistoryDetails'
+    | 'fullProductCreation';
 }
 
 export function Navbar({ onNavigate, currentPage }: NavbarProps) {
@@ -131,6 +143,7 @@ export function Navbar({ onNavigate, currentPage }: NavbarProps) {
       <CreateProductDialog
         open={createProductOpen}
         onOpenChange={setCreateProductOpen}
+        onNavigate={onNavigate}
       />
     </nav>
   );
