@@ -175,14 +175,13 @@ export function ManualUpdateStockPage({
   const largestUnitLabel = language === "ar" ? "أكبر وحدة" : "Largest Unit";
   const smallestUnitLabel = language === "ar" ? "أصغر وحدة" : "Smallest Unit";
   const conversionCountLabel =
-    language === "ar"
-      ? "عدد الوحدات الصغرى لكل عبوة كبرى"
-      : "Smallest Units / Large Pack";
+    language === "ar" ? "عدد الصغرى/كبرى" : "Smallest Unit Count";
   const editProductLabel = language === "ar" ? "تعديل المنتج" : "Edit Product";
   const productLabel = language === "ar" ? "المنتج" : "Product";
   const sourceLabel = language === "ar" ? "المصدر" : "Source";
   const unitsLabel = language === "ar" ? "الوحدات" : "Units";
-  const conversionShortLabel = language === "ar" ? "التحويل" : "Conversion";
+  const aumetReferenceLabel =
+    language === "ar" ? "مرجع Aumet" : "Aumet Reference";
   const openDetailsLabel = language === "ar" ? "فتح التفاصيل" : "Open Details";
   const selectedProductDetailsLabel =
     language === "ar" ? "تفاصيل المنتج المحدد" : "Selected Product Details";
@@ -1012,7 +1011,7 @@ export function ManualUpdateStockPage({
                             {unitsLabel}
                           </TableHead>
                           <TableHead className="h-9 text-[10px] sm:text-[11px] text-center">
-                            {conversionShortLabel}
+                            {aumetReferenceLabel}
                           </TableHead>
                           <TableHead className="h-9 text-[10px] sm:text-[11px] text-center">
                             {t("actions")}
@@ -1064,11 +1063,21 @@ export function ManualUpdateStockPage({
                                 {unitLabels[group.largestUnit]} /{" "}
                                 {unitLabels[group.smallestUnit]}
                               </TableCell>
-                              <TableCell className="text-center text-gray-700">
-                                {group.smallestUnitsPerLargePack || "-"}
+                              <TableCell className="text-center">
+                                <Badge
+                                  className={`rounded-full px-2 py-0.5 text-[10px] h-5 ${
+                                    group.source === "core"
+                                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                      : "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                                  }`}
+                                >
+                                  {group.source === "core"
+                                    ? t("linked")
+                                    : t("notLinked")}
+                                </Badge>
                               </TableCell>
                               <TableCell className="text-center">
-                                <div className="flex items-center justify-center gap-1">
+                                <div className="flex items-center justify-center gap-1 flex-wrap">
                                   <Button
                                     type="button"
                                     variant="outline"
@@ -1093,6 +1102,48 @@ export function ManualUpdateStockPage({
                                   </Button>
                                   <Button
                                     type="button"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedGroupKey(group.key);
+                                      const normalizedProduct =
+                                        group.source === "inventory"
+                                          ? PHARMACY_INVENTORY_PRODUCTS_V2.find(
+                                              (item) =>
+                                                item.code === group.productCode,
+                                            )
+                                          : null;
+                                      const usedBatchNumbers = new Set(
+                                        group.rows
+                                          .map((row) => row.batchNumber)
+                                          .filter(Boolean),
+                                      );
+                                      const availableBatches =
+                                        normalizedProduct?.batches.filter(
+                                          (batch) =>
+                                            !usedBatchNumbers.has(
+                                              batch.batchNumber,
+                                            ),
+                                        ) ?? [];
+
+                                      if (availableBatches.length === 0) {
+                                        addNewBatchRow(group.key);
+                                        return;
+                                      }
+
+                                      setBatchActionMenuOpenKey((current) =>
+                                        current === group.key
+                                          ? null
+                                          : group.key,
+                                      );
+                                      setExistingBatchPickerOpenKey(null);
+                                    }}
+                                    className="h-7 px-2 text-[10px] sm:text-xs rounded-full bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200"
+                                  >
+                                    {t("addBatch")}
+                                  </Button>
+                                  <Button
+                                    type="button"
                                     variant="outline"
                                     size="sm"
                                     onClick={(e) => {
@@ -1111,270 +1162,265 @@ export function ManualUpdateStockPage({
                               <TableRow className="bg-white">
                                 <TableCell colSpan={6} className="p-3">
                                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-3">
-                                    <div className="flex items-center gap-2 whitespace-nowrap overflow-x-auto pb-1">
-                                      <Input
-                                        value={
-                                          language === "ar"
-                                            ? group.productNameAr
-                                            : group.productNameEn
-                                        }
-                                        onChange={(e) =>
-                                          updateProductIdentityMeta(
-                                            group.key,
+                                    <div
+                                      className={`flex items-start justify-between gap-3 flex-wrap ${isRTL ? "flex-row-reverse" : "flex-row"}`}
+                                    >
+                                      <div className="flex items-center gap-2 whitespace-nowrap overflow-x-auto pb-1 flex-1 min-w-0">
+                                        <Input
+                                          value={
                                             language === "ar"
-                                              ? "productNameAr"
-                                              : "productNameEn",
-                                            e.target.value,
-                                          )
-                                        }
-                                        dir={isRTL ? "rtl" : "ltr"}
-                                        className={`h-7 rounded-full w-[160px] text-xs border-gray-300 bg-white ${isRTL ? "text-right" : "text-left"}`}
-                                      />
-                                      <Badge className="rounded-full px-2 py-0.5 text-[10px] bg-gray-100 text-gray-700 hover:bg-gray-100 h-5">
-                                        {t(`productSource.${group.source}`)}
-                                      </Badge>
-                                      <Badge
-                                        className={`rounded-full px-2 py-0.5 text-[10px] h-5 ${
-                                          group.source === "core"
-                                            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                                            : "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                                        }`}
+                                              ? group.productNameAr
+                                              : group.productNameEn
+                                          }
+                                          onChange={(e) =>
+                                            updateProductIdentityMeta(
+                                              group.key,
+                                              language === "ar"
+                                                ? "productNameAr"
+                                                : "productNameEn",
+                                              e.target.value,
+                                            )
+                                          }
+                                          dir={isRTL ? "rtl" : "ltr"}
+                                          className={`h-7 rounded-full w-[220px] text-xs border-gray-300 bg-white ${isRTL ? "text-right" : "text-left"}`}
+                                        />
+                                        <Input
+                                          value={group.barcode}
+                                          onChange={(e) =>
+                                            updateProductIdentityMeta(
+                                              group.key,
+                                              "barcode",
+                                              e.target.value,
+                                            )
+                                          }
+                                          dir="ltr"
+                                          className="h-7 rounded-full w-[150px] text-xs border-gray-300 bg-white"
+                                        />
+                                        <span className="text-[10px] sm:text-[11px] text-gray-600">
+                                          {largestUnitLabel}
+                                        </span>
+                                        <Select
+                                          value={group.largestUnit}
+                                          onValueChange={(value) =>
+                                            updateProductGroupMeta(
+                                              group.key,
+                                              "largestUnit",
+                                              value,
+                                            )
+                                          }
+                                        >
+                                          <SelectTrigger className="h-7 rounded-full w-[104px] text-xs border-gray-300 bg-white">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent className="rounded-xl">
+                                            {unitOptions.map((unitOption) => (
+                                              <SelectItem
+                                                key={unitOption}
+                                                value={unitOption}
+                                              >
+                                                {unitLabels[unitOption]}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+
+                                        <span className="text-[10px] sm:text-[11px] text-gray-600">
+                                          {smallestUnitLabel}
+                                        </span>
+                                        <Select
+                                          value={group.smallestUnit}
+                                          onValueChange={(value) =>
+                                            updateProductGroupMeta(
+                                              group.key,
+                                              "smallestUnit",
+                                              value,
+                                            )
+                                          }
+                                        >
+                                          <SelectTrigger className="h-7 rounded-full w-[104px] text-xs border-gray-300 bg-white">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent className="rounded-xl">
+                                            {unitOptions.map((unitOption) => (
+                                              <SelectItem
+                                                key={unitOption}
+                                                value={unitOption}
+                                              >
+                                                {unitLabels[unitOption]}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+
+                                        <span className="text-[10px] sm:text-[11px] text-gray-600">
+                                          {conversionCountLabel}
+                                        </span>
+                                        <Input
+                                          type="number"
+                                          min="0"
+                                          value={
+                                            group.smallestUnitsPerLargePack
+                                          }
+                                          onChange={(e) =>
+                                            updateProductGroupMeta(
+                                              group.key,
+                                              "smallestUnitsPerLargePack",
+                                              e.target.value,
+                                            )
+                                          }
+                                          dir="ltr"
+                                          className="h-7 rounded-full w-[92px] text-xs text-center border-gray-300 bg-white"
+                                        />
+                                      </div>
+
+                                      <div
+                                        className={`flex items-center gap-2 flex-wrap relative shrink-0 ${isRTL ? "justify-start" : "justify-end"}`}
                                       >
-                                        {group.source === "core"
-                                          ? t("linked")
-                                          : t("notLinked")}
-                                      </Badge>
-                                      <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 rounded-full px-2 py-0.5 text-[10px] h-5">
-                                        {group.rows.length} {t("batches")}
-                                      </Badge>
-                                      <Input
-                                        value={group.barcode}
-                                        onChange={(e) =>
-                                          updateProductIdentityMeta(
-                                            group.key,
-                                            "barcode",
-                                            e.target.value,
-                                          )
-                                        }
-                                        dir="ltr"
-                                        className="h-7 rounded-full w-[150px] text-xs border-gray-300 bg-white"
-                                      />
-                                      <span className="text-[10px] sm:text-[11px] text-gray-600">
-                                        {largestUnitLabel}
-                                      </span>
-                                      <Select
-                                        value={group.largestUnit}
-                                        onValueChange={(value) =>
-                                          updateProductGroupMeta(
-                                            group.key,
-                                            "largestUnit",
-                                            value,
-                                          )
-                                        }
-                                      >
-                                        <SelectTrigger className="h-7 rounded-full w-[104px] text-xs border-gray-300 bg-white">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                          {unitOptions.map((unitOption) => (
-                                            <SelectItem
-                                              key={unitOption}
-                                              value={unitOption}
-                                            >
-                                              {unitLabels[unitOption]}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                        {(() => {
+                                          const normalizedProduct =
+                                            group.source === "inventory"
+                                              ? PHARMACY_INVENTORY_PRODUCTS_V2.find(
+                                                  (item) =>
+                                                    item.code ===
+                                                    group.productCode,
+                                                )
+                                              : null;
+                                          const usedBatchNumbers = new Set(
+                                            group.rows
+                                              .map((row) => row.batchNumber)
+                                              .filter(Boolean),
+                                          );
+                                          const availableBatches =
+                                            normalizedProduct?.batches.filter(
+                                              (batch) =>
+                                                !usedBatchNumbers.has(
+                                                  batch.batchNumber,
+                                                ),
+                                            ) ?? [];
 
-                                      <span className="text-[10px] sm:text-[11px] text-gray-600">
-                                        {smallestUnitLabel}
-                                      </span>
-                                      <Select
-                                        value={group.smallestUnit}
-                                        onValueChange={(value) =>
-                                          updateProductGroupMeta(
-                                            group.key,
-                                            "smallestUnit",
-                                            value,
-                                          )
-                                        }
-                                      >
-                                        <SelectTrigger className="h-7 rounded-full w-[104px] text-xs border-gray-300 bg-white">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                          {unitOptions.map((unitOption) => (
-                                            <SelectItem
-                                              key={unitOption}
-                                              value={unitOption}
-                                            >
-                                              {unitLabels[unitOption]}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-
-                                      <span className="text-[10px] sm:text-[11px] text-gray-600">
-                                        {conversionCountLabel}
-                                      </span>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        value={group.smallestUnitsPerLargePack}
-                                        onChange={(e) =>
-                                          updateProductGroupMeta(
-                                            group.key,
-                                            "smallestUnitsPerLargePack",
-                                            e.target.value,
-                                          )
-                                        }
-                                        dir="ltr"
-                                        className="h-7 rounded-full w-[84px] text-xs text-center border-gray-300 bg-white"
-                                      />
-                                    </div>
-
-                                    <div className="flex items-center gap-2 flex-wrap relative">
-                                      {(() => {
-                                        const normalizedProduct =
-                                          group.source === "inventory"
-                                            ? PHARMACY_INVENTORY_PRODUCTS_V2.find(
-                                                (item) =>
-                                                  item.code ===
-                                                  group.productCode,
-                                              )
-                                            : null;
-                                        const usedBatchNumbers = new Set(
-                                          group.rows
-                                            .map((row) => row.batchNumber)
-                                            .filter(Boolean),
-                                        );
-                                        const availableBatches =
-                                          normalizedProduct?.batches.filter(
-                                            (batch) =>
-                                              !usedBatchNumbers.has(
-                                                batch.batchNumber,
-                                              ),
-                                          ) ?? [];
-
-                                        return (
-                                          <>
-                                            <Button
-                                              variant="outline"
-                                              onClick={() => {
-                                                if (
-                                                  availableBatches.length === 0
-                                                ) {
-                                                  addNewBatchRow(group.key);
-                                                  return;
-                                                }
-                                                setBatchActionMenuOpenKey(
-                                                  (current) =>
-                                                    current === group.key
-                                                      ? null
-                                                      : group.key,
-                                                );
-                                                setExistingBatchPickerOpenKey(
-                                                  null,
-                                                );
-                                              }}
-                                              className="h-8 px-3 rounded-full border-gray-300 text-xs"
-                                            >
-                                              <Plus className="size-4" />
-                                              {t("addBatch")}
-                                            </Button>
-                                            {availableBatches.length > 0 &&
-                                              batchActionMenuOpenKey ===
-                                                group.key && (
-                                                <div className="absolute top-10 start-0 z-[99999] w-56 rounded-2xl border border-gray-200 bg-white shadow-2xl p-2 space-y-1">
-                                                  {existingBatchPickerOpenKey ===
-                                                  group.key ? (
-                                                    <>
-                                                      <div className="px-3 py-2 border-b border-gray-100 mb-1">
-                                                        <div className="text-sm font-semibold text-gray-900">
-                                                          {t(
-                                                            "selectExistingBatch",
-                                                          )}
+                                          return (
+                                            <>
+                                              <Button
+                                                onClick={() => {
+                                                  if (
+                                                    availableBatches.length ===
+                                                    0
+                                                  ) {
+                                                    addNewBatchRow(group.key);
+                                                    return;
+                                                  }
+                                                  setBatchActionMenuOpenKey(
+                                                    (current) =>
+                                                      current === group.key
+                                                        ? null
+                                                        : group.key,
+                                                  );
+                                                  setExistingBatchPickerOpenKey(
+                                                    null,
+                                                  );
+                                                }}
+                                                className="h-9 px-4 rounded-full text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 shadow-sm gap-2"
+                                              >
+                                                <Plus className="size-4" />
+                                                {t("addBatch")}
+                                              </Button>
+                                              {availableBatches.length > 0 &&
+                                                batchActionMenuOpenKey ===
+                                                  group.key && (
+                                                  <div
+                                                    className={`absolute top-11 ${isRTL ? "left-0" : "right-0"} z-[99999] w-56 rounded-2xl border border-gray-200 bg-white shadow-2xl p-2 space-y-1`}
+                                                  >
+                                                    {existingBatchPickerOpenKey ===
+                                                    group.key ? (
+                                                      <>
+                                                        <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                                                          <div className="text-sm font-semibold text-gray-900">
+                                                            {t(
+                                                              "selectExistingBatch",
+                                                            )}
+                                                          </div>
+                                                          <div className="text-xs text-gray-500 mt-0.5">
+                                                            {t(
+                                                              "chooseBatchToEditAndAdd",
+                                                            )}
+                                                          </div>
                                                         </div>
-                                                        <div className="text-xs text-gray-500 mt-0.5">
-                                                          {t(
-                                                            "chooseBatchToEditAndAdd",
-                                                          )}
-                                                        </div>
-                                                      </div>
 
-                                                      {availableBatches.map(
-                                                        (batch) => (
-                                                          <button
-                                                            key={batch.id}
-                                                            type="button"
-                                                            onClick={() =>
-                                                              addExistingBatchDirectly(
-                                                                group.key,
-                                                                batch.id,
-                                                              )
-                                                            }
-                                                            className="w-full rounded-xl px-3 py-3 text-start bg-white hover:bg-sky-50 text-gray-700 border border-gray-200 hover:border-sky-300 transition-colors"
-                                                          >
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                              {
-                                                                batch.batchNumber
+                                                        {availableBatches.map(
+                                                          (batch) => (
+                                                            <button
+                                                              key={batch.id}
+                                                              type="button"
+                                                              onClick={() =>
+                                                                addExistingBatchDirectly(
+                                                                  group.key,
+                                                                  batch.id,
+                                                                )
                                                               }
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-0.5">
-                                                              {t("expiry")}:{" "}
-                                                              {batch.expiry}
-                                                            </div>
-                                                          </button>
-                                                        ),
-                                                      )}
+                                                              className="w-full rounded-xl px-3 py-3 text-start bg-white hover:bg-sky-50 text-gray-700 border border-gray-200 hover:border-sky-300 transition-colors"
+                                                            >
+                                                              <div className="text-sm font-medium text-gray-900">
+                                                                {
+                                                                  batch.batchNumber
+                                                                }
+                                                              </div>
+                                                              <div className="text-xs text-gray-500 mt-0.5">
+                                                                {t("expiry")}:{" "}
+                                                                {batch.expiry}
+                                                              </div>
+                                                            </button>
+                                                          ),
+                                                        )}
 
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          setExistingBatchPickerOpenKey(
-                                                            null,
-                                                          )
-                                                        }
-                                                        className="w-full rounded-xl px-3 py-2 text-sm text-start hover:bg-gray-50 text-gray-700 border-t border-gray-100 mt-1"
-                                                      >
-                                                        {t("cancel")}
-                                                      </button>
-                                                    </>
-                                                  ) : (
-                                                    <>
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          setExistingBatchPickerOpenKey(
-                                                            group.key,
-                                                          )
-                                                        }
-                                                        className="w-full rounded-xl px-3 py-3 text-sm text-start bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 transition-colors"
-                                                      >
-                                                        {t("editExistingBatch")}
-                                                      </button>
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                          addNewBatchRow(
-                                                            group.key,
-                                                          );
-                                                          setBatchActionMenuOpenKey(
-                                                            null,
-                                                          );
-                                                        }}
-                                                        className="w-full rounded-xl px-3 py-3 text-sm text-start bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 transition-colors"
-                                                      >
-                                                        {t("addNewBatch")}
-                                                      </button>
-                                                    </>
-                                                  )}
-                                                </div>
-                                              )}
-                                          </>
-                                        );
-                                      })()}
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            setExistingBatchPickerOpenKey(
+                                                              null,
+                                                            )
+                                                          }
+                                                          className="w-full rounded-xl px-3 py-2 text-sm text-start hover:bg-gray-50 text-gray-700 border-t border-gray-100 mt-1"
+                                                        >
+                                                          {t("cancel")}
+                                                        </button>
+                                                      </>
+                                                    ) : (
+                                                      <div className="flex flex-col gap-2 w-full">
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            setExistingBatchPickerOpenKey(
+                                                              group.key,
+                                                            )
+                                                          }
+                                                          className="block w-full rounded-xl px-3 py-3 text-sm text-start bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 transition-colors"
+                                                        >
+                                                          {t(
+                                                            "editExistingBatch",
+                                                          )}
+                                                        </button>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => {
+                                                            addNewBatchRow(
+                                                              group.key,
+                                                            );
+                                                            setBatchActionMenuOpenKey(
+                                                              null,
+                                                            );
+                                                          }}
+                                                          className="block w-full rounded-xl px-3 py-3 text-sm text-start bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 transition-colors"
+                                                        >
+                                                          {t("addNewBatch")}
+                                                        </button>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                            </>
+                                          );
+                                        })()}
+                                      </div>
                                     </div>
 
                                     {group.rows.length > 0 ? (
@@ -1446,8 +1492,11 @@ export function ManualUpdateStockPage({
                                                           e.target.value,
                                                         )
                                                       }
+                                                      placeholder={t(
+                                                        "batchNumber",
+                                                      )}
                                                       dir="ltr"
-                                                      className="h-8 rounded-full w-[118px] text-[11px]"
+                                                      className="h-9 rounded-full w-[118px] text-[11px] border-gray-300 bg-white placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-teal-500/20"
                                                     />
                                                   </TableCell>
                                                   <TableCell className="py-2">
@@ -1460,8 +1509,9 @@ export function ManualUpdateStockPage({
                                                           e.target.value,
                                                         )
                                                       }
+                                                      placeholder={t("expiry")}
                                                       dir="ltr"
-                                                      className="h-8 rounded-full w-[110px] text-[11px]"
+                                                      className="h-9 rounded-full w-[110px] text-[11px] border-gray-300 bg-white placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-teal-500/20"
                                                     />
                                                   </TableCell>
                                                   <TableCell className="py-2">
@@ -1474,7 +1524,10 @@ export function ManualUpdateStockPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      className="h-8 rounded-full w-[128px] text-[11px]"
+                                                      placeholder={t(
+                                                        "warehouseLocation",
+                                                      )}
+                                                      className="h-9 rounded-full w-[128px] text-[11px] border-gray-300 bg-white placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-teal-500/20"
                                                     />
                                                   </TableCell>
                                                   <TableCell className="py-2">
@@ -1490,7 +1543,7 @@ export function ManualUpdateStockPage({
                                                         )
                                                       }
                                                     >
-                                                      <SelectTrigger className="w-[120px] rounded-full h-8 text-[11px]">
+                                                      <SelectTrigger className="w-[120px] rounded-full h-9 text-[11px] border-gray-300 bg-white focus:ring-2 focus:ring-teal-500/20">
                                                         <SelectValue />
                                                       </SelectTrigger>
                                                       <SelectContent>
@@ -1518,8 +1571,13 @@ export function ManualUpdateStockPage({
                                                           e.target.value,
                                                         )
                                                       }
+                                                      placeholder={
+                                                        language === "ar"
+                                                          ? "الكمية"
+                                                          : "Qty"
+                                                      }
                                                       dir="ltr"
-                                                      className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
+                                                      className="w-[90px] h-9 rounded-full text-center mx-auto text-[11px] border-gray-300 bg-white placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-teal-500/20"
                                                     />
                                                   </TableCell>
                                                   <TableCell className="py-2 text-center">
@@ -1535,7 +1593,12 @@ export function ManualUpdateStockPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
+                                                      placeholder={
+                                                        language === "ar"
+                                                          ? "التكلفة"
+                                                          : "Cost"
+                                                      }
+                                                      className="w-[90px] h-9 rounded-full text-center mx-auto text-[11px] border-gray-300 bg-white placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-teal-500/20"
                                                     />
                                                   </TableCell>
                                                   <TableCell className="py-2 text-center">
@@ -1551,7 +1614,12 @@ export function ManualUpdateStockPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
+                                                      placeholder={
+                                                        language === "ar"
+                                                          ? "السعر"
+                                                          : "Price"
+                                                      }
+                                                      className="w-[90px] h-9 rounded-full text-center mx-auto text-[11px] border-gray-300 bg-white placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-teal-500/20"
                                                     />
                                                   </TableCell>
                                                   <TableCell className="py-2 text-center">
@@ -1569,7 +1637,10 @@ export function ManualUpdateStockPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      className={`h-8 rounded-full w-[168px] text-[11px] ${
+                                                      placeholder={t(
+                                                        "enterAdjustmentReason",
+                                                      )}
+                                                      className={`h-9 rounded-full w-[168px] text-[11px] border-gray-300 bg-white placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-teal-500/20 ${
                                                         isRTL
                                                           ? "text-right"
                                                           : "text-left"
