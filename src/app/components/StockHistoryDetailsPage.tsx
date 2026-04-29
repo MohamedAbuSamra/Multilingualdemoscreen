@@ -45,10 +45,29 @@ interface StockHistoryItem {
   avgCost: string;
   sellPrice: string;
   reason: string;
+  status: string;
   source: "core" | "inventory" | "custom";
 }
 
 const STOCK_HISTORY_DETAILS_SAMPLE: StockHistoryItem[] = [
+  {
+    id: "history-4",
+    productCode: "CM-410",
+    productNameEn: "Calcium Magnesium Tablets",
+    productNameAr: "أقراص الكالسيوم والمغنيسيوم",
+    subtitleEn: "60 Tablets",
+    subtitleAr: "٦٠ قرص",
+    barcode: "6250999911111",
+    categoryKey: "categoryVitamins",
+    currentStock: 65,
+    stockTypeUpdate: "stockIn",
+    newStockQty: "10",
+    avgCost: "7.80",
+    sellPrice: "12.00",
+    reason: "Completed warehouse count update",
+    status: "complete",
+    source: "inventory",
+  },
   {
     id: "history-1",
     productCode: "PH-201",
@@ -64,7 +83,26 @@ const STOCK_HISTORY_DETAILS_SAMPLE: StockHistoryItem[] = [
     avgCost: "11.20",
     sellPrice: "18.50",
     reason: "Seasonal replenishment",
+    status: "draft",
     source: "inventory",
+  },
+  {
+    id: "history-5",
+    productCode: "ZN-220",
+    productNameEn: "Zinc 25 mg Tablets",
+    productNameAr: "أقراص الزنك ٢٥ مجم",
+    subtitleEn: "30 Tablets",
+    subtitleAr: "٣٠ قرص",
+    barcode: "6250999922222",
+    categoryKey: "categoryVitamins",
+    currentStock: 14,
+    stockTypeUpdate: "stockOut",
+    newStockQty: "4",
+    avgCost: "4.10",
+    sellPrice: "7.20",
+    reason: "Batch failed inspection",
+    status: "failed",
+    source: "core",
   },
   {
     id: "history-2",
@@ -81,7 +119,26 @@ const STOCK_HISTORY_DETAILS_SAMPLE: StockHistoryItem[] = [
     avgCost: "5.40",
     sellPrice: "9.75",
     reason: "Damaged units adjustment",
+    status: "pending",
     source: "core",
+  },
+  {
+    id: "history-6",
+    productCode: "HB-330",
+    productNameEn: "Herbal Recovery Syrup",
+    productNameAr: "شراب التعافي العشبي",
+    subtitleEn: "150 ml",
+    subtitleAr: "١٥٠ مل",
+    barcode: "6250999933333",
+    categoryKey: "categoryGastrointestinal",
+    currentStock: 27,
+    stockTypeUpdate: "stockIn",
+    newStockQty: "6",
+    avgCost: "6.35",
+    sellPrice: "10.50",
+    reason: "Transferred for review",
+    status: "cancelled",
+    source: "custom",
   },
   {
     id: "history-3",
@@ -98,9 +155,40 @@ const STOCK_HISTORY_DETAILS_SAMPLE: StockHistoryItem[] = [
     avgCost: "3.25",
     sellPrice: "6.00",
     reason: "New handmade batch",
+    status: "processing",
     source: "custom",
   },
 ];
+
+const STATUS_SORT_ORDER = [
+  "draft",
+  "pending",
+  "processing",
+  "complete",
+  "failed",
+];
+
+const getStatusPriority = (status: string) => {
+  const index = STATUS_SORT_ORDER.indexOf(status.toLowerCase());
+  return index === -1 ? STATUS_SORT_ORDER.length : index;
+};
+
+const getStatusBadgeClassName = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "draft":
+      return "bg-slate-100 text-slate-700 hover:bg-slate-100";
+    case "pending":
+      return "bg-amber-100 text-amber-700 hover:bg-amber-100";
+    case "processing":
+      return "bg-blue-100 text-blue-700 hover:bg-blue-100";
+    case "complete":
+      return "bg-green-100 text-green-700 hover:bg-green-100";
+    case "failed":
+      return "bg-red-100 text-red-700 hover:bg-red-100";
+    default:
+      return "bg-gray-100 text-gray-700 hover:bg-gray-100";
+  }
+};
 
 export function StockHistoryDetailsPage({
   onNavigate,
@@ -115,18 +203,28 @@ export function StockHistoryDetailsPage({
   const visibleRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    if (!normalizedQuery) return stockItems;
+    const filteredItems = stockItems.filter((item) => {
+      if (!normalizedQuery) return true;
 
-    return stockItems.filter((item) =>
-      [
+      return [
         item.productCode,
         item.barcode,
         item.productNameEn,
         item.productNameAr,
         item.subtitleEn,
         item.subtitleAr,
-      ].some((value) => value.toLowerCase().includes(normalizedQuery)),
-    );
+        item.status,
+      ].some((value) => value.toLowerCase().includes(normalizedQuery));
+    });
+
+    return [...filteredItems].sort((a, b) => {
+      const priorityDifference =
+        getStatusPriority(a.status) - getStatusPriority(b.status);
+
+      if (priorityDifference !== 0) return priorityDifference;
+
+      return a.productCode.localeCompare(b.productCode);
+    });
   }, [searchQuery, stockItems]);
 
   const updateStockItem = (
@@ -223,6 +321,11 @@ export function StockHistoryDetailsPage({
                   <TableHead
                     className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
                   >
+                    {t("status")}
+                  </TableHead>
+                  <TableHead
+                    className={`text-xs font-semibold text-gray-700 h-11 ${isRTL ? "text-right" : "text-left"}`}
+                  >
                     {t("stockTypeUpdate")}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-700 h-11 text-center w-[140px]">
@@ -300,6 +403,15 @@ export function StockHistoryDetailsPage({
                     <TableCell
                       className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
                     >
+                      <Badge
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${getStatusBadgeClassName(item.status)}`}
+                      >
+                        {item.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell
+                      className={`py-3 ${isRTL ? "text-right" : "text-left"}`}
+                    >
                       <Select
                         value={item.stockTypeUpdate}
                         onValueChange={(value) =>
@@ -313,7 +425,9 @@ export function StockHistoryDetailsPage({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
-                          <SelectItem value="stockIn">{t("stockIn")}</SelectItem>
+                          <SelectItem value="stockIn">
+                            {t("stockIn")}
+                          </SelectItem>
                           <SelectItem value="stockOut">
                             {t("stockOut")}
                           </SelectItem>
@@ -326,7 +440,11 @@ export function StockHistoryDetailsPage({
                         min="0"
                         value={item.newStockQty}
                         onChange={(e) =>
-                          updateStockItem(item.id, "newStockQty", e.target.value)
+                          updateStockItem(
+                            item.id,
+                            "newStockQty",
+                            e.target.value,
+                          )
                         }
                         dir="ltr"
                         className="w-[120px] h-10 rounded-full text-center mx-auto"
@@ -362,17 +480,21 @@ export function StockHistoryDetailsPage({
                       <div
                         className={`inline-flex min-w-[88px] items-center justify-center rounded-md px-2 py-1 text-sm font-semibold ${
                           (item.stockTypeUpdate === "stockIn"
-                            ? item.currentStock + (Number(item.newStockQty) || 0)
+                            ? item.currentStock +
+                              (Number(item.newStockQty) || 0)
                             : Math.max(
                                 0,
-                                item.currentStock - (Number(item.newStockQty) || 0),
+                                item.currentStock -
+                                  (Number(item.newStockQty) || 0),
                               )) > item.currentStock
                             ? "bg-green-50 text-green-700"
                             : (item.stockTypeUpdate === "stockIn"
-                                  ? item.currentStock + (Number(item.newStockQty) || 0)
+                                  ? item.currentStock +
+                                    (Number(item.newStockQty) || 0)
                                   : Math.max(
                                       0,
-                                      item.currentStock - (Number(item.newStockQty) || 0),
+                                      item.currentStock -
+                                        (Number(item.newStockQty) || 0),
                                     )) < item.currentStock
                               ? "bg-red-50 text-red-700"
                               : "bg-gray-50 text-gray-900"
@@ -382,7 +504,8 @@ export function StockHistoryDetailsPage({
                           ? item.currentStock + (Number(item.newStockQty) || 0)
                           : Math.max(
                               0,
-                              item.currentStock - (Number(item.newStockQty) || 0),
+                              item.currentStock -
+                                (Number(item.newStockQty) || 0),
                             )
                         ).toLocaleString("en-GB")}
                       </div>
@@ -418,9 +541,7 @@ export function StockHistoryDetailsPage({
               >
                 {t("backToHistory")}
               </Button>
-              <Button
-                className="bg-teal-500 hover:bg-teal-600 h-10 px-5 text-white rounded-full gap-2"
-              >
+              <Button className="bg-teal-500 hover:bg-teal-600 h-10 px-5 text-white rounded-full gap-2">
                 <Save className="size-4" />
                 {t("saveAdjustments")}
               </Button>
