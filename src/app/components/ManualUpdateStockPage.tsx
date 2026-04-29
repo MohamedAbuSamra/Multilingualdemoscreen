@@ -38,10 +38,6 @@ import {
   type SelectedInventoryProductWithBatches,
 } from "./MyProductsDialog";
 import {
-  AddProductSourceDialog,
-  type ProductSourceOption,
-} from "./AddProductSourceDialog";
-import {
   ManualStockCustomProductDialog,
   type ManualCustomProductInput,
 } from "./ManualStockCustomProductDialog";
@@ -235,13 +231,12 @@ export function ManualUpdateStockPage({
     "piece",
   ];
   const [searchQuery, setSearchQuery] = useState("");
-  const [addSourceOpen, setAddSourceOpen] = useState(false);
   const [corePickerOpen, setCorePickerOpen] = useState(false);
   const [inventoryPickerOpen, setInventoryPickerOpen] = useState(false);
   const [customProductOpen, setCustomProductOpen] = useState(false);
-  const [activeSource, setActiveSource] = useState<ProductSourceOption | null>(
-    null,
-  );
+  const [activeSource, setActiveSource] = useState<
+    "core" | "inventory" | "custom" | null
+  >(null);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [productGroups, setProductGroups] = useState<ProductGroupMeta[]>([]);
   const [existingBatchPickerOpenKey, setExistingBatchPickerOpenKey] = useState<
@@ -526,21 +521,6 @@ export function ManualUpdateStockPage({
     );
   };
 
-  const openSourceStep = (source: ProductSourceOption) => {
-    setActiveSource(source);
-    setAddSourceOpen(false);
-    setCorePickerOpen(source === "core");
-    setInventoryPickerOpen(source === "inventory");
-    setCustomProductOpen(source === "custom");
-  };
-
-  const openSourceChooser = () => {
-    setCorePickerOpen(false);
-    setInventoryPickerOpen(false);
-    setCustomProductOpen(false);
-    setAddSourceOpen(true);
-  };
-
   const groupedVisibleRows = useMemo<ProductGroupWithRows[]>(() => {
     const rowsMap = new Map<string, StockItem[]>();
 
@@ -760,35 +740,34 @@ export function ManualUpdateStockPage({
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
-      <AddProductSourceDialog
-        open={addSourceOpen}
-        onOpenChange={setAddSourceOpen}
-        selectedSource={activeSource}
-        onSelectSource={openSourceStep}
-      />
-
       <AumetCoreProductsDialog
         open={corePickerOpen}
-        onOpenChange={setCorePickerOpen}
+        onOpenChange={(open) => {
+          setCorePickerOpen(open);
+          if (!open) setActiveSource(null);
+        }}
         selectedCodes={stockItems.map((item) => item.productCode)}
         onAddProducts={addCoreProductsToTable}
-        onBackToSource={openSourceChooser}
       />
 
       <MyProductsDialog
         open={inventoryPickerOpen}
-        onOpenChange={setInventoryPickerOpen}
+        onOpenChange={(open) => {
+          setInventoryPickerOpen(open);
+          if (!open) setActiveSource(null);
+        }}
         selectedCodes={stockItems.map((item) => item.productCode)}
         onAddProducts={addInventoryProductsToTable}
-        onBackToSource={openSourceChooser}
       />
 
       <ManualStockCustomProductDialog
         open={customProductOpen}
-        onOpenChange={setCustomProductOpen}
+        onOpenChange={(open) => {
+          setCustomProductOpen(open);
+          if (!open) setActiveSource(null);
+        }}
         existingCodes={stockItems.map((item) => item.productCode)}
         onAddProduct={addCustomProductToTable}
-        onBackToSource={openSourceChooser}
       />
 
       <div className="p-6 space-y-5 flex-1" dir={isRTL ? "rtl" : "ltr"}>
@@ -813,13 +792,6 @@ export function ManualUpdateStockPage({
               {t("manualUpdateStockDescription")}
             </p>
           </div>
-          <Button
-            onClick={() => setAddSourceOpen(true)}
-            className="bg-teal-500 hover:bg-teal-600 h-10 gap-2 px-4 text-sm rounded-full"
-          >
-            <Plus className="size-4" />
-            {t("addProduct")}
-          </Button>
         </div>
 
         <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-2xl p-3.5">
@@ -905,7 +877,113 @@ export function ManualUpdateStockPage({
         </div>
 
         <div className="-mx-6 sm:mx-0 bg-white border border-gray-200 rounded-none sm:rounded-2xl overflow-visible">
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 space-y-3 bg-gradient-to-b from-gray-50 to-white">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className={isRTL ? "text-right" : "text-left"}>
+                <div className="text-sm font-semibold text-gray-900">
+                  {t("addProduct")}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {language === "ar"
+                    ? "أضف منتجات إلى الجدول بسرعة من المصدر المناسب"
+                    : "Quickly add products to the table from the right source"}
+                </div>
+              </div>
+              <Badge className="rounded-full bg-teal-50 text-teal-700 hover:bg-teal-50 px-2.5 py-1 text-[10px] font-medium">
+                {stockItems.length}{" "}
+                {language === "ar" ? "منتج محدد" : "products selected"}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveSource("core");
+                  setCorePickerOpen(true);
+                }}
+                className={`rounded-2xl border p-3 text-start transition-all ${
+                  activeSource === "core"
+                    ? "border-teal-500 bg-teal-50 shadow-sm"
+                    : "border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/40"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="size-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {t("browseAumetCore")}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 leading-5">
+                      {language === "ar"
+                        ? "ابحث وأضف من كتالوج Aumet Core"
+                        : "Search and add from the Aumet Core catalog"}
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveSource("inventory");
+                  setInventoryPickerOpen(true);
+                }}
+                className={`rounded-2xl border p-3 text-start transition-all ${
+                  activeSource === "inventory"
+                    ? "border-teal-500 bg-teal-50 shadow-sm"
+                    : "border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/40"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="size-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                    <Boxes className="size-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {t("myProducts")}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 leading-5">
+                      {language === "ar"
+                        ? "اختر من منتجات مخزونك الحالية"
+                        : "Choose from your current inventory products"}
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveSource("custom");
+                  setCustomProductOpen(true);
+                }}
+                className={`rounded-2xl border p-3 text-start transition-all ${
+                  activeSource === "custom"
+                    ? "border-teal-500 bg-teal-50 shadow-sm"
+                    : "border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/40"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="size-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                    <Package className="size-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {t("createProduct")}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 leading-5">
+                      {language === "ar"
+                        ? "أنشئ منتجًا جديدًا وأضفه مباشرة إلى الجدول"
+                        : "Create a new product and add it directly to the table"}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
@@ -917,14 +995,6 @@ export function ManualUpdateStockPage({
                   className={`ps-9 h-10 text-sm border-gray-300 rounded-full w-full ${isRTL ? "text-right" : "text-left"}`}
                 />
               </div>
-              <Button
-                onClick={() => setAddSourceOpen(true)}
-                variant="outline"
-                className="h-10 gap-2 px-4 text-sm rounded-full border-gray-300"
-              >
-                <Package className="size-4" />
-                {t("addProduct")}
-              </Button>
             </div>
           </div>
 
@@ -1003,7 +1073,10 @@ export function ManualUpdateStockPage({
                                   {language === "ar"
                                     ? group.productNameAr
                                     : group.productNameEn}{" "}
-                                  <span className="text-[10px] text-gray-500" dir="ltr">
+                                  <span
+                                    className="text-[10px] text-gray-500"
+                                    dir="ltr"
+                                  >
                                     • {group.productCode} • {group.barcode}
                                   </span>
                                 </div>
@@ -1032,7 +1105,9 @@ export function ManualUpdateStockPage({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedGroupKey((current) =>
-                                        current === group.key ? null : group.key,
+                                        current === group.key
+                                          ? null
+                                          : group.key,
                                       );
                                     }}
                                     className="h-7 px-2 text-[10px] sm:text-xs rounded-full border-gray-300"
@@ -1194,7 +1269,8 @@ export function ManualUpdateStockPage({
                                           group.source === "inventory"
                                             ? PHARMACY_INVENTORY_PRODUCTS_V2.find(
                                                 (item) =>
-                                                  item.code === group.productCode,
+                                                  item.code ===
+                                                  group.productCode,
                                               )
                                             : null;
                                         const usedBatchNumbers = new Set(
@@ -1215,7 +1291,9 @@ export function ManualUpdateStockPage({
                                             <Button
                                               variant="outline"
                                               onClick={() => {
-                                                if (availableBatches.length === 0) {
+                                                if (
+                                                  availableBatches.length === 0
+                                                ) {
                                                   addNewBatchRow(group.key);
                                                   return;
                                                 }
@@ -1225,7 +1303,9 @@ export function ManualUpdateStockPage({
                                                       ? null
                                                       : group.key,
                                                 );
-                                                setExistingBatchPickerOpenKey(null);
+                                                setExistingBatchPickerOpenKey(
+                                                  null,
+                                                );
                                               }}
                                               className="h-8 px-3 rounded-full border-gray-300 text-xs"
                                             >
@@ -1266,7 +1346,9 @@ export function ManualUpdateStockPage({
                                                             className="w-full rounded-xl px-3 py-3 text-start bg-white hover:bg-sky-50 text-gray-700 border border-gray-200 hover:border-sky-300 transition-colors"
                                                           >
                                                             <div className="text-sm font-medium text-gray-900">
-                                                              {batch.batchNumber}
+                                                              {
+                                                                batch.batchNumber
+                                                              }
                                                             </div>
                                                             <div className="text-xs text-gray-500 mt-0.5">
                                                               {t("expiry")}:{" "}
@@ -1304,7 +1386,9 @@ export function ManualUpdateStockPage({
                                                       <button
                                                         type="button"
                                                         onClick={() => {
-                                                          addNewBatchRow(group.key);
+                                                          addNewBatchRow(
+                                                            group.key,
+                                                          );
                                                           setBatchActionMenuOpenKey(
                                                             null,
                                                           );
@@ -1365,169 +1449,176 @@ export function ManualUpdateStockPage({
                                           <TableBody>
                                             {group.rows.map((item) => {
                                               const nextLevel =
-                                                item.stockTypeUpdate === "stockIn"
+                                                item.stockTypeUpdate ===
+                                                "stockIn"
                                                   ? item.currentStock +
-                                                    (Number(item.newStockQty) || 0)
+                                                    (Number(item.newStockQty) ||
+                                                      0)
                                                   : Math.max(
                                                       0,
                                                       item.currentStock -
-                                                        (Number(item.newStockQty) ||
-                                                          0),
+                                                        (Number(
+                                                          item.newStockQty,
+                                                        ) || 0),
                                                     );
                                               return (
-                                              <TableRow key={`inline-${item.id}`}>
-                                                <TableCell className="py-2">
-                                                  <Input
-                                                    value={item.batchNumber}
-                                                    onChange={(e) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "batchNumber",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    dir="ltr"
-                                                    className="h-8 rounded-full w-[118px] text-[11px]"
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="py-2">
-                                                  <Input
-                                                    value={item.expiry}
-                                                    onChange={(e) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "expiry",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    dir="ltr"
-                                                    className="h-8 rounded-full w-[110px] text-[11px]"
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="py-2">
-                                                  <Input
-                                                    value={item.warehouseZone}
-                                                    onChange={(e) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "warehouseZone",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    className="h-8 rounded-full w-[128px] text-[11px]"
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="py-2">
-                                                  <Select
-                                                    value={item.stockTypeUpdate}
-                                                    onValueChange={(value) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "stockTypeUpdate",
-                                                        value,
-                                                      )
-                                                    }
-                                                  >
-                                                    <SelectTrigger className="w-[120px] rounded-full h-8 text-[11px]">
-                                                      <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                      <SelectItem value="stockIn">
-                                                        {t("stockIn")}
-                                                      </SelectItem>
-                                                      <SelectItem value="stockOut">
-                                                        {t("stockOut")}
-                                                      </SelectItem>
-                                                    </SelectContent>
-                                                  </Select>
-                                                </TableCell>
-                                                <TableCell className="py-2 text-center">
-                                                  {item.currentStock}
-                                                </TableCell>
-                                                <TableCell className="py-2 text-center">
-                                                  <Input
-                                                    type="number"
-                                                    min="0"
-                                                    value={item.newStockQty}
-                                                    onChange={(e) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "newStockQty",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    dir="ltr"
-                                                    className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="py-2 text-center">
-                                                  <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={item.avgCost}
-                                                    onChange={(e) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "avgCost",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="py-2 text-center">
-                                                  <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={item.sellPrice}
-                                                    onChange={(e) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "sellPrice",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="py-2 text-center">
-                                                  <span className="inline-flex min-w-[64px] items-center justify-center rounded-md px-2 py-1 text-[11px] font-semibold bg-gray-50 text-gray-900">
-                                                    {nextLevel}
-                                                  </span>
-                                                </TableCell>
-                                                <TableCell className="py-2">
-                                                  <Input
-                                                    value={item.reason}
-                                                    onChange={(e) =>
-                                                      updateStockItem(
-                                                        item.id,
-                                                        "reason",
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    className={`h-8 rounded-full w-[168px] text-[11px] ${
-                                                      isRTL
-                                                        ? "text-right"
-                                                        : "text-left"
-                                                    }`}
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="py-2 text-center">
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                      removeStockItem(item.id)
-                                                    }
-                                                    className="size-8 p-0 hover:bg-red-50 text-red-600 rounded-full"
-                                                  >
-                                                    <Trash2 className="size-4" />
-                                                  </Button>
-                                                </TableCell>
-                                              </TableRow>
-                                            );
+                                                <TableRow
+                                                  key={`inline-${item.id}`}
+                                                >
+                                                  <TableCell className="py-2">
+                                                    <Input
+                                                      value={item.batchNumber}
+                                                      onChange={(e) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "batchNumber",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      dir="ltr"
+                                                      className="h-8 rounded-full w-[118px] text-[11px]"
+                                                    />
+                                                  </TableCell>
+                                                  <TableCell className="py-2">
+                                                    <Input
+                                                      value={item.expiry}
+                                                      onChange={(e) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "expiry",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      dir="ltr"
+                                                      className="h-8 rounded-full w-[110px] text-[11px]"
+                                                    />
+                                                  </TableCell>
+                                                  <TableCell className="py-2">
+                                                    <Input
+                                                      value={item.warehouseZone}
+                                                      onChange={(e) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "warehouseZone",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      className="h-8 rounded-full w-[128px] text-[11px]"
+                                                    />
+                                                  </TableCell>
+                                                  <TableCell className="py-2">
+                                                    <Select
+                                                      value={
+                                                        item.stockTypeUpdate
+                                                      }
+                                                      onValueChange={(value) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "stockTypeUpdate",
+                                                          value,
+                                                        )
+                                                      }
+                                                    >
+                                                      <SelectTrigger className="w-[120px] rounded-full h-8 text-[11px]">
+                                                        <SelectValue />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        <SelectItem value="stockIn">
+                                                          {t("stockIn")}
+                                                        </SelectItem>
+                                                        <SelectItem value="stockOut">
+                                                          {t("stockOut")}
+                                                        </SelectItem>
+                                                      </SelectContent>
+                                                    </Select>
+                                                  </TableCell>
+                                                  <TableCell className="py-2 text-center">
+                                                    {item.currentStock}
+                                                  </TableCell>
+                                                  <TableCell className="py-2 text-center">
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      value={item.newStockQty}
+                                                      onChange={(e) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "newStockQty",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      dir="ltr"
+                                                      className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
+                                                    />
+                                                  </TableCell>
+                                                  <TableCell className="py-2 text-center">
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      step="0.01"
+                                                      value={item.avgCost}
+                                                      onChange={(e) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "avgCost",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
+                                                    />
+                                                  </TableCell>
+                                                  <TableCell className="py-2 text-center">
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      step="0.01"
+                                                      value={item.sellPrice}
+                                                      onChange={(e) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "sellPrice",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      className="w-[90px] h-8 rounded-full text-center mx-auto text-[11px]"
+                                                    />
+                                                  </TableCell>
+                                                  <TableCell className="py-2 text-center">
+                                                    <span className="inline-flex min-w-[64px] items-center justify-center rounded-md px-2 py-1 text-[11px] font-semibold bg-gray-50 text-gray-900">
+                                                      {nextLevel}
+                                                    </span>
+                                                  </TableCell>
+                                                  <TableCell className="py-2">
+                                                    <Input
+                                                      value={item.reason}
+                                                      onChange={(e) =>
+                                                        updateStockItem(
+                                                          item.id,
+                                                          "reason",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      className={`h-8 rounded-full w-[168px] text-[11px] ${
+                                                        isRTL
+                                                          ? "text-right"
+                                                          : "text-left"
+                                                      }`}
+                                                    />
+                                                  </TableCell>
+                                                  <TableCell className="py-2 text-center">
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      onClick={() =>
+                                                        removeStockItem(item.id)
+                                                      }
+                                                      className="size-8 p-0 hover:bg-red-50 text-red-600 rounded-full"
+                                                    >
+                                                      <Trash2 className="size-4" />
+                                                    </Button>
+                                                  </TableCell>
+                                                </TableRow>
+                                              );
                                             })}
                                           </TableBody>
                                         </Table>
@@ -1552,8 +1643,6 @@ export function ManualUpdateStockPage({
                     </Table>
                   </div>
                 )}
-
-                
               </div>
 
               <div className="px-4 py-3 border-t border-gray-200 bg-white flex items-center justify-between gap-3">

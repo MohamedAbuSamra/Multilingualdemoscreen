@@ -109,7 +109,7 @@ export function ManualStockCustomProductDialog({
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       resetForm();
-      onBackToSource?.();
+      onOpenChange(false);
       return;
     }
 
@@ -307,7 +307,7 @@ export function ManualStockCustomProductDialog({
               variant="outline"
               onClick={() => {
                 resetForm();
-                onBackToSource?.();
+                onOpenChange(false);
               }}
               className="h-10 px-5 rounded-full border-gray-300"
             >

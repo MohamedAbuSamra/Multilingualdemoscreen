@@ -154,7 +154,7 @@ export function AumetCoreProductsDialog({
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       resetDialogState();
-      onBackToSource?.();
+      onOpenChange(false);
       return;
     }
 
@@ -384,7 +384,7 @@ export function AumetCoreProductsDialog({
               variant="outline"
               onClick={() => {
                 resetDialogState();
-                onBackToSource?.();
+                onOpenChange(false);
               }}
               className="h-10 px-5 rounded-full border-gray-300"
             >
