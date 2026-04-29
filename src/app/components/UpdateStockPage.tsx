@@ -137,6 +137,22 @@ const STOCK_ADJUSTMENT_HISTORY_RAW: {
 
 const LAST_STOCK_ADJUSTMENT_DATE = new Date(2025, 3, 15);
 
+const STATUS_DISPLAY_ORDER = [
+  "adjustmentStatusDraft",
+  "adjustmentStatusPending",
+  "adjustmentStatusProcessing",
+  "adjustmentStatusConfirmed",
+  "adjustmentStatusFailed",
+  "adjustmentStatusReversal",
+] as const;
+
+const getStatusOrder = (statusKey: string) => {
+  const index = STATUS_DISPLAY_ORDER.indexOf(
+    statusKey as (typeof STATUS_DISPLAY_ORDER)[number],
+  );
+  return index === -1 ? STATUS_DISPLAY_ORDER.length : index;
+};
+
 export function UpdateStockPage({
   onNavigate,
 }: {
@@ -204,18 +220,27 @@ export function UpdateStockPage({
 
   const stockHistory = useMemo(
     () =>
-      stockHistoryRows.map((row) => ({
-        id: row.id,
-        statusKey: row.statusKey,
-        createdAt: formatStockDateTime(row.createdAt, language),
-        status: t(row.statusKey),
-        statusColor: row.statusColor,
-        createdUser: t(row.userKey),
-        updatedAt: formatStockDateTime(row.updatedAt, language),
-        totalProducts: row.totalProducts.toLocaleString("en-GB"),
-        autoMigrated: row.autoMigrated,
-        failedMigrated: row.failedMigrated,
-      })),
+      [...stockHistoryRows]
+        .sort((a, b) => {
+          const statusDifference =
+            getStatusOrder(a.statusKey) - getStatusOrder(b.statusKey);
+
+          if (statusDifference !== 0) return statusDifference;
+
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        })
+        .map((row) => ({
+          id: row.id,
+          statusKey: row.statusKey,
+          createdAt: formatStockDateTime(row.createdAt, language),
+          status: t(row.statusKey),
+          statusColor: row.statusColor,
+          createdUser: t(row.userKey),
+          updatedAt: formatStockDateTime(row.updatedAt, language),
+          totalProducts: row.totalProducts.toLocaleString("en-GB"),
+          autoMigrated: row.autoMigrated,
+          failedMigrated: row.failedMigrated,
+        })),
     [language, stockHistoryRows, t],
   );
 
