@@ -1,15 +1,24 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  InventoryBatchActionDialog,
+  type InventoryBatchActionDialogMode,
+  type InventoryBatchActionTarget,
+} from "./InventoryBatchActionDialog";
+import {
   ChevronDown,
   ChevronUp,
   Plus,
   History,
+  PackagePlus,
   Search,
   Filter,
   Download,
   MoreVertical,
   ShoppingBag,
   FileText,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  PencilLine,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -44,7 +53,7 @@ interface InventoryPageProps {
       | "manualUpdateStock"
       | "stockHistoryDetails"
       | "fullProductCreation"
-      | "viewProduct"
+      | "viewProduct",
   ) => void;
 }
 
@@ -58,6 +67,11 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
     x: number;
     y: number;
   } | null>(null);
+  const [batchActionDialogOpen, setBatchActionDialogOpen] = useState(false);
+  const [batchActionMode, setBatchActionMode] =
+    useState<InventoryBatchActionDialogMode>("editBatch");
+  const [batchActionTarget, setBatchActionTarget] =
+    useState<InventoryBatchActionTarget | null>(null);
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -129,12 +143,28 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
     );
   };
 
+  const openBatchActionDialog = (
+    mode: InventoryBatchActionDialogMode,
+    target: InventoryBatchActionTarget,
+  ) => {
+    setRowActionMenu(null);
+    setBatchActionMode(mode);
+    setBatchActionTarget(target);
+    setBatchActionDialogOpen(true);
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
       <CreateProductDialog
         open={createProductOpen}
         onOpenChange={setCreateProductOpen}
         onNavigate={onNavigate}
+      />
+      <InventoryBatchActionDialog
+        open={batchActionDialogOpen}
+        onOpenChange={setBatchActionDialogOpen}
+        mode={batchActionMode}
+        target={batchActionTarget}
       />
       <div className="p-6 space-y-5 flex-1">
         <div className="flex items-center gap-3">
@@ -209,6 +239,78 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
             >
               {t("manualUpdateStock")}
             </button>
+            {(() => {
+              const selectedProduct = products.find(
+                (product) => product.id === rowActionMenu.id,
+              );
+
+              if (!selectedProduct) return null;
+
+              return (
+                <>
+                  <button
+                    type="button"
+                    className="w-full text-start px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() =>
+                      openBatchActionDialog("stockIn", {
+                        type: "product",
+                        productId: selectedProduct.id,
+                        productCode: selectedProduct.code,
+                        productName: selectedProduct.name,
+                        batches: selectedProduct.batches,
+                      })
+                    }
+                  >
+                    {language === "ar" ? "إدخال مخزون" : "Stock In"}
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full text-start px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() =>
+                      openBatchActionDialog("stockOut", {
+                        type: "product",
+                        productId: selectedProduct.id,
+                        productCode: selectedProduct.code,
+                        productName: selectedProduct.name,
+                        batches: selectedProduct.batches,
+                      })
+                    }
+                  >
+                    {language === "ar" ? "إخراج مخزون" : "Stock Out"}
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full text-start px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() =>
+                      openBatchActionDialog("editBatch", {
+                        type: "product",
+                        productId: selectedProduct.id,
+                        productCode: selectedProduct.code,
+                        productName: selectedProduct.name,
+                        batches: selectedProduct.batches,
+                      })
+                    }
+                  >
+                    {language === "ar" ? "تعديل الدفعة" : "Edit Batch"}
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full text-start px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() =>
+                      openBatchActionDialog("addBatch", {
+                        type: "product",
+                        productId: selectedProduct.id,
+                        productCode: selectedProduct.code,
+                        productName: selectedProduct.name,
+                        batches: selectedProduct.batches,
+                      })
+                    }
+                  >
+                    {language === "ar" ? "إضافة دفعة" : "Add Batch"}
+                  </button>
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -381,47 +483,47 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-gray-200 bg-gray-50">
-                  <TableHead className="w-12 h-11"></TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="w-10 h-10 px-2"></TableHead>
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("code")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("productName")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("barcode")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("category")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("lotBatch")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("expiry")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("lastSale")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("stockQty")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("avgCostPrice")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("sellPrice")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("tax")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("warehouseLocation")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("status")}
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-700 h-11 text-start">
+                  <TableHead className="text-[11px] font-semibold text-gray-700 h-10 text-start px-2">
                     {t("actions")}
                   </TableHead>
                 </TableRow>
@@ -433,11 +535,11 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                   return (
                     <React.Fragment key={product.id}>
                       <TableRow className="border-b border-gray-200 hover:bg-gray-50">
-                        <TableCell className="py-3">
+                        <TableCell className="py-2.5 px-2">
                           <button
                             type="button"
                             onClick={() => toggleExpanded(product.id)}
-                            className="size-9 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                            className="size-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
                             aria-label={
                               isExpanded
                                 ? t("collapseBatches")
@@ -451,62 +553,62 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                             )}
                           </button>
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.code}
                         </TableCell>
-                        <TableCell className="py-3 text-start">
-                          <div className="text-xs text-gray-900">
+                        <TableCell className="py-2.5 px-2 text-start">
+                          <div className="text-[11px] text-gray-900">
                             {product.name}
                           </div>
-                          <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
+                          <div className="text-[10px] text-gray-500 flex items-center gap-1.5 flex-wrap">
                             <span>{product.subtitle}</span>
-                            <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 rounded-full px-2 py-0.5 text-[10px]">
+                            <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 rounded-full px-1.5 py-0.5 text-[9px]">
                               {product.batchCount} {t("batches")}
                             </Badge>
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.barcode}
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.category}
                         </TableCell>
-                        <TableCell className="py-3 text-start">
+                        <TableCell className="py-2.5 px-2 text-start">
                           {product.lotBatch && (
-                            <div className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full inline-block">
+                            <div className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full inline-block">
                               {product.lotBatch}
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="py-3 text-start">
+                        <TableCell className="py-2.5 px-2 text-start">
                           {product.expiry && (
-                            <div className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full inline-block">
+                            <div className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full inline-block">
                               {product.expiry}
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.lastSale}
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.stockQty}
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.avgCost}
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.sellPrice}
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.tax}
                         </TableCell>
-                        <TableCell className="text-xs text-gray-700 py-3 text-start">
+                        <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                           {product.warehouse}
                         </TableCell>
-                        <TableCell className="py-3 text-start">
+                        <TableCell className="py-2.5 px-2 text-start">
                           {product.status && (
                             <Badge
-                              className={`text-xs px-2 py-0.5 rounded-full ${
+                              className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                 product.statusColor === "red"
                                   ? "bg-red-100 text-red-700 hover:bg-red-100"
                                   : product.statusColor === "green"
@@ -518,31 +620,134 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="py-3">
-                          <div className="inline-block">
+                        <TableCell className="py-2.5 px-2">
+                          <div className="flex items-center gap-1">
                             <Button
+                              type="button"
                               variant="ghost"
                               size="sm"
-                              className="size-8 p-0 hover:bg-gray-100 rounded-full"
-                              data-row-action-trigger
-                              onClick={(event) => {
-                                const targetRect =
-                                  event.currentTarget.getBoundingClientRect();
-                                const menuWidth = 176;
-                                const clampedX = Math.min(
-                                  window.innerWidth - menuWidth - 8,
-                                  Math.max(8, targetRect.right - menuWidth),
-                                );
-                                const nextY = targetRect.bottom + 8;
-                                setRowActionMenu((current) =>
-                                  current?.id === product.id
-                                    ? null
-                                    : { id: product.id, x: clampedX, y: nextY },
-                                );
-                              }}
+                              title={
+                                language === "ar" ? "إدخال مخزون" : "Stock In"
+                              }
+                              aria-label={
+                                language === "ar" ? "إدخال مخزون" : "Stock In"
+                              }
+                              className="size-7 p-0 hover:bg-emerald-50 hover:text-emerald-700 rounded-full"
+                              onClick={() =>
+                                openBatchActionDialog("stockIn", {
+                                  type: "product",
+                                  productId: product.id,
+                                  productCode: product.code,
+                                  productName: product.name,
+                                  batches: product.batches,
+                                })
+                              }
                             >
-                              <MoreVertical className="size-4 text-gray-600" />
+                              <ArrowDownToLine className="size-3.5" />
                             </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              title={
+                                language === "ar" ? "إخراج مخزون" : "Stock Out"
+                              }
+                              aria-label={
+                                language === "ar" ? "إخراج مخزون" : "Stock Out"
+                              }
+                              className="size-7 p-0 hover:bg-rose-50 hover:text-rose-700 rounded-full"
+                              onClick={() =>
+                                openBatchActionDialog("stockOut", {
+                                  type: "product",
+                                  productId: product.id,
+                                  productCode: product.code,
+                                  productName: product.name,
+                                  batches: product.batches,
+                                })
+                              }
+                            >
+                              <ArrowUpFromLine className="size-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              title={
+                                language === "ar"
+                                  ? "تعديل الدفعة"
+                                  : "Edit Batch"
+                              }
+                              aria-label={
+                                language === "ar"
+                                  ? "تعديل الدفعة"
+                                  : "Edit Batch"
+                              }
+                              className="size-7 p-0 hover:bg-amber-50 hover:text-amber-700 rounded-full"
+                              onClick={() =>
+                                openBatchActionDialog("editBatch", {
+                                  type: "product",
+                                  productId: product.id,
+                                  productCode: product.code,
+                                  productName: product.name,
+                                  batches: product.batches,
+                                })
+                              }
+                            >
+                              <PencilLine className="size-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              title={
+                                language === "ar" ? "إضافة دفعة" : "Add Batch"
+                              }
+                              aria-label={
+                                language === "ar" ? "إضافة دفعة" : "Add Batch"
+                              }
+                              className="size-7 p-0 hover:bg-blue-50 hover:text-blue-700 rounded-full"
+                              onClick={() =>
+                                openBatchActionDialog("addBatch", {
+                                  type: "product",
+                                  productId: product.id,
+                                  productCode: product.code,
+                                  productName: product.name,
+                                  batches: product.batches,
+                                })
+                              }
+                            >
+                              <PackagePlus className="size-3.5" />
+                            </Button>
+
+                            <div className="inline-block">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="size-7 p-0 hover:bg-gray-100 rounded-full"
+                                data-row-action-trigger
+                                onClick={(event) => {
+                                  const targetRect =
+                                    event.currentTarget.getBoundingClientRect();
+                                  const menuWidth = 176;
+                                  const clampedX = Math.min(
+                                    window.innerWidth - menuWidth - 8,
+                                    Math.max(8, targetRect.right - menuWidth),
+                                  );
+                                  const nextY = targetRect.bottom + 8;
+                                  setRowActionMenu((current) =>
+                                    current?.id === product.id
+                                      ? null
+                                      : {
+                                          id: product.id,
+                                          x: clampedX,
+                                          y: nextY,
+                                        },
+                                  );
+                                }}
+                              >
+                                <MoreVertical className="size-3.5 text-gray-600" />
+                              </Button>
+                            </div>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -555,8 +760,37 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                             <div className="px-5 py-4">
                               <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
                                 <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-3 flex-wrap">
-                                  <div className="text-sm font-semibold text-gray-900">
-                                    {t("batches")}
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-sm font-semibold text-gray-900">
+                                      {t("batches")}
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      title={
+                                        language === "ar"
+                                          ? "إضافة دفعة"
+                                          : "Add Batch"
+                                      }
+                                      aria-label={
+                                        language === "ar"
+                                          ? "إضافة دفعة"
+                                          : "Add Batch"
+                                      }
+                                      className="size-7 p-0 hover:bg-blue-50 hover:text-blue-700 rounded-full"
+                                      onClick={() =>
+                                        openBatchActionDialog("addBatch", {
+                                          type: "product",
+                                          productId: product.id,
+                                          productCode: product.code,
+                                          productName: product.name,
+                                          batches: product.batches,
+                                        })
+                                      }
+                                    >
+                                      <PackagePlus className="size-3.5" />
+                                    </Button>
                                   </div>
                                   <div className="text-xs text-gray-500">
                                     {product.batchCount} {t("batches")}
@@ -585,6 +819,9 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                                         <TableHead className="text-xs font-semibold text-gray-700 h-10 text-start">
                                           {t("sellPrice")}
                                         </TableHead>
+                                        <TableHead className="text-xs font-semibold text-gray-700 h-10 text-start">
+                                          {t("actions")}
+                                        </TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -593,21 +830,148 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                                           key={batch.id}
                                           className="border-b border-gray-200 last:border-b-0"
                                         >
-                                          <TableCell className="text-xs text-gray-700 py-3 text-start">
+                                          <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                                             {batch.batchNumber}
                                           </TableCell>
-                                          <TableCell className="text-xs text-gray-700 py-3 text-start">
+                                          <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                                             {batch.expiry}
                                           </TableCell>
-                                          <TableCell className="text-xs text-gray-700 py-3 text-start">{`${t("main")} · ${batch.warehouseZone}`}</TableCell>
-                                          <TableCell className="text-xs text-gray-700 py-3 text-start">
+                                          <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">{`${t("main")} · ${batch.warehouseZone}`}</TableCell>
+                                          <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                                             {batch.stockQty}
                                           </TableCell>
-                                          <TableCell className="text-xs text-gray-700 py-3 text-start">
+                                          <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                                             {batch.avgCost}
                                           </TableCell>
-                                          <TableCell className="text-xs text-gray-700 py-3 text-start">
+                                          <TableCell className="text-[11px] text-gray-700 py-2.5 px-2 text-start">
                                             {batch.sellPrice}
+                                          </TableCell>
+                                          <TableCell className="py-2.5 px-2 text-start">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                title={
+                                                  language === "ar"
+                                                    ? "تعديل الدفعة"
+                                                    : "Edit Batch"
+                                                }
+                                                aria-label={
+                                                  language === "ar"
+                                                    ? "تعديل الدفعة"
+                                                    : "Edit Batch"
+                                                }
+                                                className="size-7 p-0 hover:bg-amber-50 hover:text-amber-700 rounded-full"
+                                                onClick={() =>
+                                                  openBatchActionDialog(
+                                                    "editBatch",
+                                                    {
+                                                      type: "batch",
+                                                      productId: product.id,
+                                                      productCode: product.code,
+                                                      productName: product.name,
+                                                      batch,
+                                                      batches: product.batches,
+                                                    },
+                                                  )
+                                                }
+                                              >
+                                                <PencilLine className="size-3.5" />
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                title={
+                                                  language === "ar"
+                                                    ? "إدخال مخزون"
+                                                    : "Stock In"
+                                                }
+                                                aria-label={
+                                                  language === "ar"
+                                                    ? "إدخال مخزون"
+                                                    : "Stock In"
+                                                }
+                                                className="size-7 p-0 hover:bg-emerald-50 hover:text-emerald-700 rounded-full"
+                                                onClick={() =>
+                                                  openBatchActionDialog(
+                                                    "stockIn",
+                                                    {
+                                                      type: "batch",
+                                                      productId: product.id,
+                                                      productCode: product.code,
+                                                      productName: product.name,
+                                                      batch,
+                                                      batches: product.batches,
+                                                    },
+                                                  )
+                                                }
+                                              >
+                                                <ArrowDownToLine className="size-3.5" />
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                title={
+                                                  language === "ar"
+                                                    ? "إخراج مخزون"
+                                                    : "Stock Out"
+                                                }
+                                                aria-label={
+                                                  language === "ar"
+                                                    ? "إخراج مخزون"
+                                                    : "Stock Out"
+                                                }
+                                                className="size-7 p-0 hover:bg-rose-50 hover:text-rose-700 rounded-full"
+                                                onClick={() =>
+                                                  openBatchActionDialog(
+                                                    "stockOut",
+                                                    {
+                                                      type: "batch",
+                                                      productId: product.id,
+                                                      productCode: product.code,
+                                                      productName: product.name,
+                                                      batch,
+                                                      batches: product.batches,
+                                                    },
+                                                  )
+                                                }
+                                              >
+                                                <ArrowUpFromLine className="size-3.5" />
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                title={
+                                                  language === "ar"
+                                                    ? "إضافة دفعة"
+                                                    : "Add Batch"
+                                                }
+                                                aria-label={
+                                                  language === "ar"
+                                                    ? "إضافة دفعة"
+                                                    : "Add Batch"
+                                                }
+                                                className="size-7 p-0 hover:bg-blue-50 hover:text-blue-700 rounded-full"
+                                                onClick={() =>
+                                                  openBatchActionDialog(
+                                                    "addBatch",
+                                                    {
+                                                      type: "product",
+                                                      productId: product.id,
+                                                      productCode: product.code,
+                                                      productName: product.name,
+                                                      batches: product.batches,
+                                                    },
+                                                  )
+                                                }
+                                              >
+                                                <PackagePlus className="size-3.5" />
+                                              </Button>
+                                            </div>
                                           </TableCell>
                                         </TableRow>
                                       ))}
