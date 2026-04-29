@@ -308,7 +308,8 @@ const translations = {
     fullCreateUploadFiles: "Upload Files",
     fullCreateImageUrl: "Image URL",
     fullCreateUploadHintMain: "Click to upload or drag and drop",
-    fullCreateUploadHintSub: "PNG, JPG or WEBP (max. 5MB). 800x800px recommended.",
+    fullCreateUploadHintSub:
+      "PNG, JPG or WEBP (max. 5MB). 800x800px recommended.",
     fullCreateVisibilityTitle: "Status & Visibility",
     fullCreateStatusActions: "Status & Actions",
     fullCreateMandatoryFields: "Mandatory Fields",
@@ -918,7 +919,7 @@ const translations = {
 };
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("ar");
+  const [language, setLanguage] = useState<Language>("en");
 
   useEffect(() => {
     document.documentElement.lang = language;
