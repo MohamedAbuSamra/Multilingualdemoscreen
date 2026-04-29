@@ -31,12 +31,6 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 import { useLanguage } from "../contexts/LanguageContext";
 import { FiltersSection } from "./FiltersSection";
 import { CreateProductDialog } from "./CreateProductDialog";
@@ -183,34 +177,6 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
             <History className="size-4" />
             {t("stockHistory")}
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-9 gap-2 px-4 text-sm rounded-full border-gray-300"
-              >
-                <MoreVertical className="size-4" />
-                {t("actions")}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align={language === "ar" ? "start" : "end"}
-              className="rounded-xl"
-            >
-              <DropdownMenuItem
-                className="cursor-pointer text-start"
-                onClick={() => onNavigate("viewProduct")}
-              >
-                {t("fullViewPageTitle")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer text-start"
-                onClick={() => onNavigate("manualUpdateStock")}
-              >
-                {t("manualUpdateStock")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
         {rowActionMenu && (
