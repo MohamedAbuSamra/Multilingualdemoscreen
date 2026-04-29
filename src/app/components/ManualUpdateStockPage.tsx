@@ -32,15 +32,9 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { AumetCoreProductsDialog } from "./AumetCoreProductsDialog";
-import {
-  MyProductsDialog,
-  type SelectedInventoryProductWithBatches,
-} from "./MyProductsDialog";
-import {
-  ManualStockCustomProductDialog,
-  type ManualCustomProductInput,
-} from "./ManualStockCustomProductDialog";
+import { AddProductDialog, type AddProductSource } from "./AddProductDialog";
+import type { SelectedInventoryProductWithBatches } from "./MyProductsPanel";
+import type { ManualCustomProductInput } from "./ManualStockCustomProductPanel";
 import type { AumetCoreProduct } from "../data/aumetCoreProductsSample";
 import type { PharmacyInventoryRow } from "../data/pharmacyInventorySample";
 import { PHARMACY_INVENTORY_PRODUCTS_V2 } from "../data/pharmacyInventoryProducts";
@@ -231,12 +225,8 @@ export function ManualUpdateStockPage({
     "piece",
   ];
   const [searchQuery, setSearchQuery] = useState("");
-  const [corePickerOpen, setCorePickerOpen] = useState(false);
-  const [inventoryPickerOpen, setInventoryPickerOpen] = useState(false);
-  const [customProductOpen, setCustomProductOpen] = useState(false);
-  const [activeSource, setActiveSource] = useState<
-    "core" | "inventory" | "custom" | null
-  >(null);
+  const [addProductDialogOpen, setAddProductDialogOpen] = useState(false);
+  const [activeSource, setActiveSource] = useState<AddProductSource>("core");
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [productGroups, setProductGroups] = useState<ProductGroupMeta[]>([]);
   const [existingBatchPickerOpenKey, setExistingBatchPickerOpenKey] = useState<
@@ -740,34 +730,15 @@ export function ManualUpdateStockPage({
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
-      <AumetCoreProductsDialog
-        open={corePickerOpen}
-        onOpenChange={(open) => {
-          setCorePickerOpen(open);
-          if (!open) setActiveSource(null);
-        }}
+      <AddProductDialog
+        open={addProductDialogOpen}
+        onOpenChange={setAddProductDialogOpen}
+        activeSource={activeSource}
+        onActiveSourceChange={setActiveSource}
         selectedCodes={stockItems.map((item) => item.productCode)}
-        onAddProducts={addCoreProductsToTable}
-      />
-
-      <MyProductsDialog
-        open={inventoryPickerOpen}
-        onOpenChange={(open) => {
-          setInventoryPickerOpen(open);
-          if (!open) setActiveSource(null);
-        }}
-        selectedCodes={stockItems.map((item) => item.productCode)}
-        onAddProducts={addInventoryProductsToTable}
-      />
-
-      <ManualStockCustomProductDialog
-        open={customProductOpen}
-        onOpenChange={(open) => {
-          setCustomProductOpen(open);
-          if (!open) setActiveSource(null);
-        }}
-        existingCodes={stockItems.map((item) => item.productCode)}
-        onAddProduct={addCustomProductToTable}
+        onAddCoreProducts={addCoreProductsToTable}
+        onAddInventoryProducts={addInventoryProductsToTable}
+        onAddCustomProduct={addCustomProductToTable}
       />
 
       <div className="p-6 space-y-5 flex-1" dir={isRTL ? "rtl" : "ltr"}>
@@ -900,7 +871,7 @@ export function ManualUpdateStockPage({
                 type="button"
                 onClick={() => {
                   setActiveSource("core");
-                  setCorePickerOpen(true);
+                  setAddProductDialogOpen(true);
                 }}
                 className={`rounded-2xl border p-3 text-start transition-all ${
                   activeSource === "core"
@@ -929,7 +900,7 @@ export function ManualUpdateStockPage({
                 type="button"
                 onClick={() => {
                   setActiveSource("inventory");
-                  setInventoryPickerOpen(true);
+                  setAddProductDialogOpen(true);
                 }}
                 className={`rounded-2xl border p-3 text-start transition-all ${
                   activeSource === "inventory"
@@ -958,7 +929,7 @@ export function ManualUpdateStockPage({
                 type="button"
                 onClick={() => {
                   setActiveSource("custom");
-                  setCustomProductOpen(true);
+                  setAddProductDialogOpen(true);
                 }}
                 className={`rounded-2xl border p-3 text-start transition-all ${
                   activeSource === "custom"
