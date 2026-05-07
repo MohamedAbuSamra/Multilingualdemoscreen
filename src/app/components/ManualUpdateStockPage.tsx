@@ -848,112 +848,6 @@ export function ManualUpdateStockPage({
 
         <div className="-mx-6 sm:mx-0 bg-white border border-gray-200 rounded-none sm:rounded-2xl overflow-visible">
           <div className="p-4 border-b border-gray-200 space-y-3 bg-gradient-to-b from-gray-50 to-white">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className={isRTL ? "text-right" : "text-left"}>
-                <div className="text-sm font-semibold text-gray-900">
-                  {t("addProduct")}
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  {language === "ar"
-                    ? "أضف منتجات إلى الجدول بسرعة من المصدر المناسب"
-                    : "Quickly add products to the table from the right source"}
-                </div>
-              </div>
-              <Badge className="rounded-full bg-teal-50 text-teal-700 hover:bg-teal-50 px-2.5 py-1 text-[10px] font-medium">
-                {stockItems.length}{" "}
-                {language === "ar" ? "منتج محدد" : "products selected"}
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveSource("core");
-                  setAddProductDialogOpen(true);
-                }}
-                className={`rounded-2xl border p-3 text-start transition-all ${
-                  activeSource === "core"
-                    ? "border-teal-500 bg-teal-50 shadow-sm"
-                    : "border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/40"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="size-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <Sparkles className="size-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {t("browseAumetCore")}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1 leading-5">
-                      {language === "ar"
-                        ? "ابحث وأضف من كتالوج Aumet Core"
-                        : "Search and add from the Aumet Core catalog"}
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveSource("inventory");
-                  setAddProductDialogOpen(true);
-                }}
-                className={`rounded-2xl border p-3 text-start transition-all ${
-                  activeSource === "inventory"
-                    ? "border-teal-500 bg-teal-50 shadow-sm"
-                    : "border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/40"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="size-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                    <Boxes className="size-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {t("myProducts")}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1 leading-5">
-                      {language === "ar"
-                        ? "اختر من منتجات مخزونك الحالية"
-                        : "Choose from your current inventory products"}
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveSource("custom");
-                  setAddProductDialogOpen(true);
-                }}
-                className={`rounded-2xl border p-3 text-start transition-all ${
-                  activeSource === "custom"
-                    ? "border-teal-500 bg-teal-50 shadow-sm"
-                    : "border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/40"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="size-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
-                    <Package className="size-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {t("createProduct")}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1 leading-5">
-                      {language === "ar"
-                        ? "أنشئ منتجًا جديدًا وأضفه مباشرة إلى الجدول"
-                        : "Create a new product and add it directly to the table"}
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
-
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
@@ -965,6 +859,17 @@ export function ManualUpdateStockPage({
                   className={`ps-9 h-10 text-sm border-gray-300 rounded-full w-full ${isRTL ? "text-right" : "text-left"}`}
                 />
               </div>
+              <Button
+                type="button"
+                onClick={() => {
+                  setActiveSource("core");
+                  setAddProductDialogOpen(true);
+                }}
+                className="h-10 gap-2 rounded-full bg-teal-500 px-4 text-sm text-white whitespace-nowrap hover:bg-teal-600"
+              >
+                <Plus className="size-4" />
+                {t("addProduct")}
+              </Button>
             </div>
           </div>
 
@@ -1210,6 +1115,17 @@ export function ManualUpdateStockPage({
                                           }
                                         >
                                           <SelectTrigger className="h-7 rounded-full w-[104px] text-xs border-gray-300 bg-white">
+                                      <Button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveSource("core");
+                                          setAddProductDialogOpen(true);
+                                        }}
+                                        className="h-9 shrink-0 rounded-full bg-teal-500 px-4 text-xs font-medium text-white hover:bg-teal-600"
+                                      >
+                                        <Plus className="size-4" />
+                                        {t("addProduct")}
+                                      </Button>
                                             <SelectValue />
                                           </SelectTrigger>
                                           <SelectContent className="rounded-xl">
@@ -1729,7 +1645,10 @@ export function ManualUpdateStockPage({
                   {t("manualStockEmptyStateDescription")}
                 </p>
                 <Button
-                  onClick={() => setAddSourceOpen(true)}
+                  onClick={() => {
+                    setActiveSource("core");
+                    setAddProductDialogOpen(true);
+                  }}
                   className="bg-teal-500 hover:bg-teal-600 rounded-full h-10 px-5 gap-2"
                 >
                   <Plus className="size-4" />
