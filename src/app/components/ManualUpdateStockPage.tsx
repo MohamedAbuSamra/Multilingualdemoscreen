@@ -868,12 +868,6 @@ export function ManualUpdateStockPage({
           {stockItems.length > 0 ? (
             <>
               <div className="p-3 space-y-3 bg-gray-50">
-                <div className="flex items-center justify-end">
-                  <div className="text-[11px] text-gray-500">
-                    {groupedVisibleRows.length} {productLabel.toLowerCase()}
-                  </div>
-                </div>
-
                 {groupedVisibleRows.length > 0 && (
                   <div className="bg-white border border-gray-200 rounded-xl overflow-auto">
                     <Table className="text-[11px] sm:text-xs">
