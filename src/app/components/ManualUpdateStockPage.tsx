@@ -119,6 +119,11 @@ type ImportedStockRow = {
   reason: string;
 };
 
+type ImportPreview = {
+  rowsToAdd: ImportedStockRow[];
+  skippedRows: ImportedStockRow[];
+};
+
 const IMPORT_TEMPLATE_HEADERS = [
   "productCode",
   "productNameEn",
@@ -173,6 +178,32 @@ function parseImportedStockRows(
         row.productCode &&
         (row.productNameEn || row.productNameAr || row.barcode),
     );
+}
+
+function splitImportedRowsByExisting(
+  rows: ImportedStockRow[],
+  existingItems: StockItem[],
+): ImportPreview {
+  const existingRowKeys = new Set(
+    existingItems.map((item) => `${item.productCode}::${item.batchNumber}`),
+  );
+  const seenImportedKeys = new Set<string>();
+
+  return rows.reduce<ImportPreview>(
+    (result, row) => {
+      const rowKey = `${row.productCode}::${row.batchNumber}`;
+
+      if (existingRowKeys.has(rowKey) || seenImportedKeys.has(rowKey)) {
+        result.skippedRows.push(row);
+        return result;
+      }
+
+      seenImportedKeys.add(rowKey);
+      result.rowsToAdd.push(row);
+      return result;
+    },
+    { rowsToAdd: [], skippedRows: [] },
+  );
 }
 
 function buildCoreStockItem(product: AumetCoreProduct): StockItem {
@@ -312,6 +343,9 @@ export function ManualUpdateStockPage({
   const [addProductDialogOpen, setAddProductDialogOpen] = useState(false);
   const [importConfirmationOpen, setImportConfirmationOpen] = useState(false);
   const [pendingImportedRows, setPendingImportedRows] = useState<
+    ImportedStockRow[]
+  >([]);
+  const [skippedImportedRows, setSkippedImportedRows] = useState<
     ImportedStockRow[]
   >([]);
   const [pendingImportFileName, setPendingImportFileName] = useState("");
@@ -611,14 +645,20 @@ export function ManualUpdateStockPage({
         },
       );
       const parsedRows = parseImportedStockRows(rawRows);
+      const importPreview = splitImportedRowsByExisting(parsedRows, stockItems);
 
-      if (parsedRows.length === 0) {
+      if (
+        importPreview.rowsToAdd.length === 0 &&
+        importPreview.skippedRows.length === 0
+      ) {
         setPendingImportedRows([]);
+        setSkippedImportedRows([]);
         setPendingImportFileName("");
         return;
       }
 
-      setPendingImportedRows(parsedRows);
+      setPendingImportedRows(importPreview.rowsToAdd);
+      setSkippedImportedRows(importPreview.skippedRows);
       setPendingImportFileName(file.name);
       setImportConfirmationOpen(true);
     } finally {
@@ -630,12 +670,14 @@ export function ManualUpdateStockPage({
     applyImportedRowsToTable(pendingImportedRows);
     setImportConfirmationOpen(false);
     setPendingImportedRows([]);
+    setSkippedImportedRows([]);
     setPendingImportFileName("");
   };
 
   const handleCancelImportConfirmation = () => {
     setImportConfirmationOpen(false);
     setPendingImportedRows([]);
+    setSkippedImportedRows([]);
     setPendingImportFileName("");
   };
 
@@ -972,8 +1014,8 @@ export function ManualUpdateStockPage({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {language === "ar"
-                ? `تم العثور على ${pendingImportedRows.length} صف في ${pendingImportFileName}. هل تريد إضافتها مباشرة إلى الجدول؟`
-                : `Found ${pendingImportedRows.length} row(s) in ${pendingImportFileName}. Do you want to add them directly to the table?`}
+                ? `تم العثور على ${pendingImportedRows.length} صف جديد في ${pendingImportFileName}.${skippedImportedRows.length > 0 ? ` يوجد أيضًا ${skippedImportedRows.length} صف مضاف مسبقًا وسيتم تخطيه.` : ""} هل تريد إضافتها مباشرة إلى الجدول؟`
+                : `Found ${pendingImportedRows.length} new row(s) in ${pendingImportFileName}.${skippedImportedRows.length > 0 ? ` ${skippedImportedRows.length} row(s) are already in the table and will be skipped.` : ""} Do you want to add them directly to the table?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-900">
@@ -981,6 +1023,13 @@ export function ManualUpdateStockPage({
               ? "سيتم إدراج المنتجات المستوردة داخل جدول التحديث اليدوي ويمكنك تعديلها قبل الحفظ."
               : "Imported products will be inserted into the manual update table and remain editable before saving."}
           </div>
+          {skippedImportedRows.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {language === "ar"
+                ? `سيتم تخطي ${skippedImportedRows.length} صف لأنه موجود مسبقًا في الجدول.`
+                : `${skippedImportedRows.length} row(s) will be skipped because they already exist in the table.`}
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={handleCancelImportConfirmation}
