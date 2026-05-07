@@ -1,5 +1,5 @@
-import { Boxes, Package, Sparkles } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { useEffect, useState } from "react";
+import { Boxes, Loader2, Package, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,9 +8,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { useLanguage } from "../contexts/LanguageContext";
-import {
-  AumetCoreProductsPanel,
-} from "./AumetCoreProductsPanel";
+import { AumetCoreProductsPanel } from "./AumetCoreProductsPanel";
 import {
   MyProductsPanel,
   type SelectedInventoryProductWithBatches,
@@ -48,6 +46,7 @@ export function AddProductDialog({
 }: AddProductDialogProps) {
   const { t, language } = useLanguage();
   const isRTL = language === "ar";
+  const [isOpeningLoading, setIsOpeningLoading] = useState(false);
 
   const sourceOptions: {
     key: AddProductSource;
@@ -88,24 +87,35 @@ export function AddProductDialog({
     },
   ];
 
+  useEffect(() => {
+    if (!open) {
+      setIsOpeningLoading(false);
+      return;
+    }
+
+    setIsOpeningLoading(true);
+    onActiveSourceChange("inventory");
+
+    const timer = window.setTimeout(() => {
+      setIsOpeningLoading(false);
+    }, 1500);
+
+    return () => window.clearTimeout(timer);
+  }, [onActiveSourceChange, open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1100px] w-[92vw] p-0 gap-0 rounded-3xl overflow-hidden">
         <DialogHeader className="px-6 py-5 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className={isRTL ? "text-right" : "text-left"}>
-              <DialogTitle className="text-xl font-bold text-gray-900">
-                {t("addProduct")}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
-                {language === "ar"
-                  ? "اختر المصدر المناسب لإضافة المنتجات إلى الجدول"
-                  : "Choose the right source to add products to the table"}
-              </DialogDescription>
-            </div>
-            <Badge className="rounded-full bg-teal-50 text-teal-700 hover:bg-teal-50 px-2.5 py-1 text-[10px] font-medium">
-              {selectedCodes.length} {language === "ar" ? "منتج محدد" : "products selected"}
-            </Badge>
+          <div className={isRTL ? "text-right" : "text-left"}>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              {t("addProduct")}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 mt-1">
+              {language === "ar"
+                ? "اختر المصدر المناسب لإضافة المنتجات إلى الجدول"
+                : "Choose the right source to add products to the table"}
+            </DialogDescription>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mt-4">
@@ -117,12 +127,13 @@ export function AddProductDialog({
                 <button
                   key={option.key}
                   type="button"
+                  disabled={isOpeningLoading}
                   onClick={() => onActiveSourceChange(option.key)}
                   className={`rounded-2xl border p-3 text-start transition-all ${
                     isActive
                       ? "border-teal-500 bg-teal-50 shadow-sm"
                       : "border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/40"
-                  }`}
+                  } ${isOpeningLoading ? "cursor-wait opacity-70" : "cursor-pointer"}`}
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -145,7 +156,23 @@ export function AddProductDialog({
           </div>
         </DialogHeader>
 
-        {activeSource === "core" ? (
+        {isOpeningLoading ? (
+          <div className="flex min-h-[420px] flex-col items-center justify-center gap-3 bg-white px-6 py-10 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+              <Loader2 className="size-5 animate-spin" />
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-gray-900">
+                {language === "ar" ? "جاري التحميل" : "Loading"}
+              </div>
+              <div className="text-xs text-gray-500">
+                {language === "ar"
+                  ? "يتم تجهيز قائمة المنتجات"
+                  : "Preparing the product list"}
+              </div>
+            </div>
+          </div>
+        ) : activeSource === "core" ? (
           <AumetCoreProductsPanel
             selectedCodes={selectedCodes}
             onAddProducts={(products) => {

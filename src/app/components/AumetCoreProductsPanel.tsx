@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Search } from "lucide-react";
+import { Check, ChevronDown, Filter, Loader2, Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -7,6 +7,7 @@ import {
   AUMET_CORE_PRODUCTS,
   type AumetCoreProduct,
 } from "../data/aumetCoreProductsSample";
+import type { ProductCategoryKey } from "../data/pharmacyInventorySample";
 
 interface AumetCoreProductsPanelProps {
   selectedCodes: string[];
@@ -19,8 +20,21 @@ export function AumetCoreProductsPanel({
   onAddProducts,
   onCancel,
 }: AumetCoreProductsPanelProps) {
+  const ALL_CATEGORIES = "all";
+  const ALL_MANUFACTURERS = "all";
+  const ALL_STOCK_STATUS = "all";
   const { t, language } = useLanguage();
   const [query, setQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<
+    ProductCategoryKey | typeof ALL_CATEGORIES
+  >(ALL_CATEGORIES);
+  const [manufacturerFilter, setManufacturerFilter] = useState<
+    string | typeof ALL_MANUFACTURERS
+  >(ALL_MANUFACTURERS);
+  const [stockStatusFilter, setStockStatusFilter] = useState<
+    "inStock" | "outOfStock" | typeof ALL_STOCK_STATUS
+  >(ALL_STOCK_STATUS);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(12);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -39,10 +53,50 @@ export function AumetCoreProductsPanel({
     [],
   );
 
+  const categoryOptions = useMemo(
+    () => [
+      ALL_CATEGORIES,
+      ...Array.from(new Set(allProducts.map((product) => product.categoryKey))),
+    ],
+    [ALL_CATEGORIES, allProducts],
+  );
+
+  const manufacturerOptions = useMemo(
+    () => [
+      ALL_MANUFACTURERS,
+      ...Array.from(
+        new Set(
+          allProducts.map((product) =>
+            language === "ar" ? product.manufacturerAr : product.manufacturerEn,
+          ),
+        ),
+      ),
+    ],
+    [ALL_MANUFACTURERS, allProducts, language],
+  );
+
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return allProducts.filter((product) => {
+      const manufacturerLabel =
+        language === "ar" ? product.manufacturerAr : product.manufacturerEn;
+      const matchesCategory =
+        categoryFilter === ALL_CATEGORIES ||
+        product.categoryKey === categoryFilter;
+      const matchesManufacturer =
+        manufacturerFilter === ALL_MANUFACTURERS ||
+        manufacturerLabel === manufacturerFilter;
+      const matchesStockStatus =
+        stockStatusFilter === ALL_STOCK_STATUS ||
+        (stockStatusFilter === "inStock"
+          ? product.currentStock > 0
+          : product.currentStock === 0);
+
+      if (!matchesCategory || !matchesManufacturer || !matchesStockStatus) {
+        return false;
+      }
+
       if (!normalizedQuery) return true;
 
       return [
@@ -56,7 +110,17 @@ export function AumetCoreProductsPanel({
         product.manufacturerAr,
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });
-  }, [allProducts, query]);
+  }, [
+    ALL_CATEGORIES,
+    ALL_MANUFACTURERS,
+    ALL_STOCK_STATUS,
+    allProducts,
+    categoryFilter,
+    language,
+    manufacturerFilter,
+    query,
+    stockStatusFilter,
+  ]);
 
   const visibleProducts = useMemo(
     () => filteredProducts.slice(0, visibleCount),
@@ -72,7 +136,7 @@ export function AumetCoreProductsPanel({
     }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [categoryFilter, manufacturerFilter, query, stockStatusFilter]);
 
   useEffect(() => {
     if (isSearchLoading) return;
@@ -124,10 +188,16 @@ export function AumetCoreProductsPanel({
     setQuery("");
   };
 
+  const resetFilters = () => {
+    setCategoryFilter(ALL_CATEGORIES);
+    setManufacturerFilter(ALL_MANUFACTURERS);
+    setStockStatusFilter(ALL_STOCK_STATUS);
+  };
+
   return (
     <>
       <div className="px-6 py-4 border-b border-gray-100 bg-white">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
             <Input
@@ -140,10 +210,117 @@ export function AumetCoreProductsPanel({
               <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 size-4 text-teal-600 animate-spin" />
             )}
           </div>
-          <div className="text-sm text-gray-500 whitespace-nowrap">
-            {selectedIds.length} {t("selectedItems")}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFiltersOpen((current) => !current)}
+            className={`h-10 gap-2 rounded-full border-gray-300 px-4 text-sm whitespace-nowrap ${
+              filtersOpen ? "bg-teal-50 border-teal-600 text-teal-600" : ""
+            }`}
+          >
+            <Filter className="size-4" strokeWidth={2} />
+            {t("filters")}
+          </Button>
         </div>
+
+        {filtersOpen && (
+          <div className="mt-2 border-t border-gray-200 pt-2.5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">
+                  {t("categoryFilter")}
+                </label>
+                <div className="relative">
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) =>
+                      setCategoryFilter(
+                        e.target.value as
+                          | ProductCategoryKey
+                          | typeof ALL_CATEGORIES,
+                      )
+                    }
+                    className="w-full appearance-none rounded-full border border-gray-300 bg-white px-4 py-2 pe-10 text-sm text-gray-600 cursor-pointer hover:border-gray-400 focus:border-teal-500 focus:outline-none"
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option === ALL_CATEGORIES ? t("all") : t(option)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 size-4 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">
+                  {t("manufacturer")}
+                </label>
+                <div className="relative">
+                  <select
+                    value={manufacturerFilter}
+                    onChange={(e) => setManufacturerFilter(e.target.value)}
+                    className="w-full appearance-none rounded-full border border-gray-300 bg-white px-4 py-2 pe-10 text-sm text-gray-600 cursor-pointer hover:border-gray-400 focus:border-teal-500 focus:outline-none"
+                  >
+                    {manufacturerOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option === ALL_MANUFACTURERS ? t("all") : option}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 size-4 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">
+                  {t("stockRange")}
+                </label>
+                <div className="relative">
+                  <select
+                    value={stockStatusFilter}
+                    onChange={(e) =>
+                      setStockStatusFilter(
+                        e.target.value as
+                          | "inStock"
+                          | "outOfStock"
+                          | typeof ALL_STOCK_STATUS,
+                      )
+                    }
+                    className="w-full appearance-none rounded-full border border-gray-300 bg-white px-4 py-2 pe-10 text-sm text-gray-600 cursor-pointer hover:border-gray-400 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value={ALL_STOCK_STATUS}>{t("all")}</option>
+                    <option value="inStock">
+                      {language === "ar" ? "متوفر" : "In Stock"}
+                    </option>
+                    <option value="outOfStock">
+                      {language === "ar" ? "غير متوفر" : "Out of Stock"}
+                    </option>
+                  </select>
+                  <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 size-4 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetFilters}
+                className="h-8 px-4 text-sm rounded-full border-gray-300 hover:bg-gray-50"
+              >
+                {t("reset")}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setFiltersOpen(false)}
+                className="bg-teal-500 hover:bg-teal-600 h-8 px-4 text-sm rounded-full"
+              >
+                {t("apply")}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="max-h-[60vh] overflow-y-auto bg-gray-50 px-6 py-4">
@@ -198,7 +375,11 @@ export function AumetCoreProductsPanel({
                         <div className="size-16 rounded-2xl border border-gray-200 bg-white overflow-hidden shrink-0">
                           <img
                             src={product.imageUrl}
-                            alt={language === "ar" ? product.nameAr : product.nameEn}
+                            alt={
+                              language === "ar"
+                                ? product.nameAr
+                                : product.nameEn
+                            }
                             className="size-full object-cover"
                             loading="lazy"
                           />
@@ -208,7 +389,9 @@ export function AumetCoreProductsPanel({
                             {product.code}
                           </div>
                           <div className="text-sm font-semibold text-gray-900 line-clamp-2">
-                            {language === "ar" ? product.nameAr : product.nameEn}
+                            {language === "ar"
+                              ? product.nameAr
+                              : product.nameEn}
                           </div>
                           <div className="text-xs text-gray-500 mt-1 line-clamp-2">
                             {language === "ar"
