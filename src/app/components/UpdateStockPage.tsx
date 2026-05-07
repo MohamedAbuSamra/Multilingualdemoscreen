@@ -283,26 +283,19 @@ export function UpdateStockPage({
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
       <div className="p-6 space-y-5 flex-1">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-teal-600 cursor-pointer">{t("dashboard")}</span>
-          <span className="text-gray-400" aria-hidden>
-            {t("breadcrumbSeparator")}
-          </span>
-          <span className="text-teal-600 cursor-pointer">{t("stocks")}</span>
-          <span className="text-gray-400" aria-hidden>
-            {t("breadcrumbSeparator")}
-          </span>
-          <span className="text-gray-600">{t("bulkStocksHistory")}</span>
-        </div>
-
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {t("bulkStocksHistory")}
-            </h1>
-            <p className="text-gray-500 text-base">
-              {t("trackStocksMovements")}
-            </p>
+            <div className="flex items-center gap-4 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {t("bulkStocksHistory")}
+              </h1>
+              <span className="text-gray-300 text-xl leading-none" aria-hidden>
+                •
+              </span>
+              <p className="text-gray-500 text-base">
+                {t("trackStocksMovements")}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <DropdownMenu>

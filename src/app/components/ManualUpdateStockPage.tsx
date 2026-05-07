@@ -741,32 +741,23 @@ export function ManualUpdateStockPage({
         onAddCustomProduct={addCustomProductToTable}
       />
 
-      <div className="p-6 space-y-5 flex-1" dir={isRTL ? "rtl" : "ltr"}>
-        <div className="flex items-center gap-2 text-sm flex-wrap">
-          <span className="text-teal-600 cursor-pointer">{t("dashboard")}</span>
-          <span className="text-gray-400" aria-hidden>
-            {t("breadcrumbSeparator")}
-          </span>
-          <span className="text-teal-600 cursor-pointer">{t("stocks")}</span>
-          <span className="text-gray-400" aria-hidden>
-            {t("breadcrumbSeparator")}
-          </span>
-          <span className="text-gray-600">{t("manualUpdateStock")}</span>
-        </div>
-
-        <div className="flex items-start justify-between gap-4">
-          <div className={isRTL ? "text-right" : "text-left"}>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="p-6 space-y-3.5 flex-1" dir={isRTL ? "rtl" : "ltr"}>
+        <div className={isRTL ? "text-right" : "text-left"}>
+          <div className="flex items-center gap-4 flex-wrap">
+            <h1 className="text-2xl font-bold text-gray-900">
               {t("manualUpdateStock")}
             </h1>
+            <span className="text-gray-300 text-xl leading-none" aria-hidden>
+              •
+            </span>
             <p className="text-gray-500 text-base">
               {t("manualUpdateStockDescription")}
             </p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-2xl p-3.5">
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-2xl p-3">
+          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
             <div className="size-5 bg-teal-600 rounded-full flex items-center justify-center">
               <Sparkles className="size-3 text-white" />
             </div>
@@ -778,8 +769,8 @@ export function ManualUpdateStockPage({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
-            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 hover:border-teal-300 transition-all">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 hover:border-teal-300 transition-all">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2 min-w-0">
                   <div className="size-7 bg-teal-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
@@ -801,7 +792,7 @@ export function ManualUpdateStockPage({
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 hover:border-teal-300 transition-all">
+            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 hover:border-teal-300 transition-all">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2 min-w-0">
                   <div className="size-7 bg-purple-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
@@ -823,7 +814,7 @@ export function ManualUpdateStockPage({
               </div>
             </div>
 
-            <div className="bg-white border border-orange-200 rounded-xl px-3 py-2.5 hover:border-orange-300 transition-all">
+            <div className="bg-white border border-orange-200 rounded-xl px-3 py-2 hover:border-orange-300 transition-all">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2 min-w-0">
                   <div className="size-7 bg-orange-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
