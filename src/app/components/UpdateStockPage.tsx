@@ -45,6 +45,7 @@ type StatusColor = "green" | "blue" | "yellow" | "red" | "purple" | "gray";
 type StockHistoryQuickFilter =
   | "all"
   | "adjustmentStatusDraft"
+  | "adjustmentStatusPending"
   | "adjustmentStatusConfirmed"
   | "adjustmentStatusReversal"
   | "adjustmentStatusFailed";
@@ -200,6 +201,16 @@ export function UpdateStockPage({
           iconClassName: "bg-slate-100 text-slate-700",
         },
         {
+          titleKey: "adjustmentStatusPending",
+          value: String(
+            stockHistoryRows.filter(
+              (item) => item.statusKey === "adjustmentStatusPending",
+            ).length,
+          ),
+          icon: AlertTriangle,
+          iconClassName: "bg-amber-50 text-amber-600",
+        },
+        {
           titleKey: "adjustmentStatusConfirmed",
           value: String(
             stockHistoryRows.filter(
@@ -284,18 +295,11 @@ export function UpdateStockPage({
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
       <div className="p-6 space-y-5 flex-1">
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-4 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {t("bulkStocksHistory")}
-              </h1>
-              <span className="text-gray-300 text-xl leading-none" aria-hidden>
-                •
-              </span>
-              <p className="text-gray-500 text-base">
-                {t("trackStocksMovements")}
-              </p>
-            </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              {t("bulkStocksHistory")}
+            </h1>
+            <p className="text-sm text-gray-500">{t("trackStocksMovements")}</p>
           </div>
           <div className="flex items-center gap-3">
             <DropdownMenu>
@@ -335,7 +339,7 @@ export function UpdateStockPage({
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="flex flex-wrap gap-2">
           {stats.map((stat) => {
             const Icon = stat.icon;
             const isActive = activeQuickFilter === stat.titleKey;
@@ -344,41 +348,31 @@ export function UpdateStockPage({
                 key={stat.titleKey}
                 type="button"
                 onClick={() => handleQuickFilterChange(stat.titleKey)}
-                className={`cursor-pointer rounded-2xl border px-3.5 py-3 text-start transition-all duration-200 ${
+                className={`cursor-pointer inline-flex min-w-[150px] items-center gap-2.5 rounded-full border px-3 py-2 text-start transition-all duration-200 ${
                   isActive
-                    ? "border-teal-300 bg-teal-50 shadow-sm ring-1 ring-teal-200"
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                    ? "border-teal-300 bg-teal-50 text-teal-900"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${stat.iconClassName}`}
-                  >
-                    <Icon className="size-3.5" />
-                  </div>
+                <div
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-full ${stat.iconClassName}`}
+                >
+                  <Icon className="size-3.5" />
+                </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-gray-500">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-current">
                       {stat.titleKey === "all"
                         ? language === "ar"
                           ? "الكل"
                           : "All"
                         : t(stat.titleKey)}
                     </p>
-                    <div className="mt-1 flex items-baseline justify-between gap-2">
-                      <p className="text-[22px] font-semibold leading-none tracking-tight text-gray-900">
-                        {stat.value}
-                      </p>
-                      <span
-                        className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
-                          isActive
-                            ? "border-teal-200 bg-white text-teal-700"
-                            : "border-teal-300 bg-white text-teal-600"
-                        }`}
-                      >
-                        {language === "ar" ? "مراجعة" : "Review"}
-                      </span>
-                    </div>
+                    <span className="text-xs text-gray-400">/</span>
+                    <p className="text-sm font-semibold text-current">
+                      {stat.value}
+                    </p>
                   </div>
                 </div>
               </button>
