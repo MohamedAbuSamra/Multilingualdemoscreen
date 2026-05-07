@@ -1116,17 +1116,6 @@ export function ManualUpdateStockPage({
                                           }
                                         >
                                           <SelectTrigger className="h-7 rounded-full w-[104px] text-xs border-gray-300 bg-white">
-                                            <Button
-                                              type="button"
-                                              onClick={() => {
-                                                setActiveSource("core");
-                                                setAddProductDialogOpen(true);
-                                              }}
-                                              className="h-9 shrink-0 rounded-full bg-teal-500 px-4 text-xs font-medium text-white hover:bg-teal-600"
-                                            >
-                                              <Plus className="size-4" />
-                                              {t("addProduct")}
-                                            </Button>
                                             <SelectValue />
                                           </SelectTrigger>
                                           <SelectContent className="rounded-xl">
