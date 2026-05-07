@@ -181,13 +181,18 @@ const STOCK_HISTORY_DETAILS_SAMPLE: StockHistoryItem[] = [
   },
 ];
 
-const DEFAULT_GROUP_UNITS: Record<StockItemSource, ProductGroupMeta["largestUnit"]> = {
+const DEFAULT_GROUP_UNITS: Record<
+  StockItemSource,
+  ProductGroupMeta["largestUnit"]
+> = {
   core: "box",
   inventory: "box",
   custom: "pack",
 };
 
-function buildInitialProductGroups(items: StockHistoryItem[]): ProductGroupMeta[] {
+function buildInitialProductGroups(
+  items: StockHistoryItem[],
+): ProductGroupMeta[] {
   const groups = new Map<string, ProductGroupMeta>();
 
   items.forEach((item) => {
@@ -355,7 +360,9 @@ export function StockHistoryDetailsPage({
   ) => {
     setStockItems((current) =>
       current.map((item) =>
-        item.id === id ? ({ ...item, [field]: value } as StockHistoryItem) : item,
+        item.id === id
+          ? ({ ...item, [field]: value } as StockHistoryItem)
+          : item,
       ),
     );
   };
@@ -415,7 +422,9 @@ export function StockHistoryDetailsPage({
       <div className="p-6 space-y-3.5 flex-1" dir={isRTL ? "rtl" : "ltr"}>
         <div className={isRTL ? "text-right" : "text-left"}>
           <div className="flex items-center gap-4 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">{draftEditorTitle}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {draftEditorTitle}
+            </h1>
             <span className="text-gray-300 text-xl leading-none" aria-hidden>
               •
             </span>
@@ -580,7 +589,10 @@ export function StockHistoryDetailsPage({
                                   {language === "ar"
                                     ? group.productNameAr
                                     : group.productNameEn}{" "}
-                                  <span className="text-[10px] text-gray-500" dir="ltr">
+                                  <span
+                                    className="text-[10px] text-gray-500"
+                                    dir="ltr"
+                                  >
                                     • {group.productCode} • {group.barcode}
                                   </span>
                                 </div>
@@ -594,7 +606,8 @@ export function StockHistoryDetailsPage({
                                 {group.rows.length}
                               </TableCell>
                               <TableCell className="text-center text-gray-700">
-                                {unitLabels[group.largestUnit]} / {unitLabels[group.smallestUnit]}
+                                {unitLabels[group.largestUnit]} /{" "}
+                                {unitLabels[group.smallestUnit]}
                               </TableCell>
                               <TableCell className="text-center">
                                 <Badge className="rounded-full px-2 py-0.5 text-[10px] h-5 bg-amber-100 text-amber-700 hover:bg-amber-100">
@@ -610,7 +623,9 @@ export function StockHistoryDetailsPage({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedGroupKey((current) =>
-                                        current === group.key ? null : group.key,
+                                        current === group.key
+                                          ? null
+                                          : group.key,
                                       );
                                     }}
                                     className="h-7 px-2 text-[10px] sm:text-xs rounded-full border-gray-300"
@@ -683,7 +698,10 @@ export function StockHistoryDetailsPage({
                                           </SelectTrigger>
                                           <SelectContent className="rounded-xl">
                                             {unitOptions.map((unitOption) => (
-                                              <SelectItem key={unitOption} value={unitOption}>
+                                              <SelectItem
+                                                key={unitOption}
+                                                value={unitOption}
+                                              >
                                                 {unitLabels[unitOption]}
                                               </SelectItem>
                                             ))}
@@ -708,7 +726,10 @@ export function StockHistoryDetailsPage({
                                           </SelectTrigger>
                                           <SelectContent className="rounded-xl">
                                             {unitOptions.map((unitOption) => (
-                                              <SelectItem key={unitOption} value={unitOption}>
+                                              <SelectItem
+                                                key={unitOption}
+                                                value={unitOption}
+                                              >
                                                 {unitLabels[unitOption]}
                                               </SelectItem>
                                             ))}
@@ -721,7 +742,9 @@ export function StockHistoryDetailsPage({
                                         <Input
                                           type="number"
                                           min="0"
-                                          value={group.smallestUnitsPerLargePack}
+                                          value={
+                                            group.smallestUnitsPerLargePack
+                                          }
                                           onChange={(e) =>
                                             updateProductGroupMeta(
                                               group.key,
@@ -737,7 +760,9 @@ export function StockHistoryDetailsPage({
                                       <div className="flex items-center gap-2 flex-wrap shrink-0">
                                         <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 h-9 text-xs text-gray-600">
                                           <Boxes className="size-3.5 text-teal-600" />
-                                          {language === "ar" ? "تحرير دفعات المسودة" : "Editing draft batches"}
+                                          {language === "ar"
+                                            ? "تحرير دفعات المسودة"
+                                            : "Editing draft batches"}
                                         </div>
                                       </div>
                                     </div>
@@ -785,15 +810,23 @@ export function StockHistoryDetailsPage({
                                           <TableBody>
                                             {group.rows.map((item) => {
                                               const nextLevel =
-                                                item.stockTypeUpdate === "stockIn"
-                                                  ? item.currentStock + (Number(item.newStockQty) || 0)
+                                                item.stockTypeUpdate ===
+                                                "stockIn"
+                                                  ? item.currentStock +
+                                                    (Number(item.newStockQty) ||
+                                                      0)
                                                   : Math.max(
                                                       0,
-                                                      item.currentStock - (Number(item.newStockQty) || 0),
+                                                      item.currentStock -
+                                                        (Number(
+                                                          item.newStockQty,
+                                                        ) || 0),
                                                     );
 
                                               return (
-                                                <TableRow key={`inline-${item.id}`}>
+                                                <TableRow
+                                                  key={`inline-${item.id}`}
+                                                >
                                                   <TableCell className="py-2">
                                                     <Input
                                                       value={item.batchNumber}
@@ -804,7 +837,9 @@ export function StockHistoryDetailsPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      placeholder={t("batchNumber")}
+                                                      placeholder={t(
+                                                        "batchNumber",
+                                                      )}
                                                       dir="ltr"
                                                       className="h-9 rounded-full w-[118px] text-[11px] border-gray-300 bg-white"
                                                     />
@@ -834,13 +869,17 @@ export function StockHistoryDetailsPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      placeholder={t("warehouseLocation")}
+                                                      placeholder={t(
+                                                        "warehouseLocation",
+                                                      )}
                                                       className="h-9 rounded-full w-[128px] text-[11px] border-gray-300 bg-white"
                                                     />
                                                   </TableCell>
                                                   <TableCell className="py-2">
                                                     <Select
-                                                      value={item.stockTypeUpdate}
+                                                      value={
+                                                        item.stockTypeUpdate
+                                                      }
                                                       onValueChange={(value) =>
                                                         updateStockItem(
                                                           item.id,
@@ -877,7 +916,11 @@ export function StockHistoryDetailsPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      placeholder={language === "ar" ? "الكمية" : "Qty"}
+                                                      placeholder={
+                                                        language === "ar"
+                                                          ? "الكمية"
+                                                          : "Qty"
+                                                      }
                                                       dir="ltr"
                                                       className="w-[90px] h-9 rounded-full text-center mx-auto text-[11px] border-gray-300 bg-white"
                                                     />
@@ -895,7 +938,11 @@ export function StockHistoryDetailsPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      placeholder={language === "ar" ? "التكلفة" : "Cost"}
+                                                      placeholder={
+                                                        language === "ar"
+                                                          ? "التكلفة"
+                                                          : "Cost"
+                                                      }
                                                       className="w-[90px] h-9 rounded-full text-center mx-auto text-[11px] border-gray-300 bg-white"
                                                     />
                                                   </TableCell>
@@ -912,7 +959,11 @@ export function StockHistoryDetailsPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      placeholder={language === "ar" ? "السعر" : "Price"}
+                                                      placeholder={
+                                                        language === "ar"
+                                                          ? "السعر"
+                                                          : "Price"
+                                                      }
                                                       className="w-[90px] h-9 rounded-full text-center mx-auto text-[11px] border-gray-300 bg-white"
                                                     />
                                                   </TableCell>
@@ -931,9 +982,13 @@ export function StockHistoryDetailsPage({
                                                           e.target.value,
                                                         )
                                                       }
-                                                      placeholder={t("enterAdjustmentReason")}
+                                                      placeholder={t(
+                                                        "enterAdjustmentReason",
+                                                      )}
                                                       className={`h-9 rounded-full w-[168px] text-[11px] border-gray-300 bg-white ${
-                                                        isRTL ? "text-right" : "text-left"
+                                                        isRTL
+                                                          ? "text-right"
+                                                          : "text-left"
                                                       }`}
                                                     />
                                                   </TableCell>
@@ -941,7 +996,9 @@ export function StockHistoryDetailsPage({
                                                     <Button
                                                       variant="ghost"
                                                       size="sm"
-                                                      onClick={() => removeStockItem(item.id)}
+                                                      onClick={() =>
+                                                        removeStockItem(item.id)
+                                                      }
                                                       className="size-8 p-0 hover:bg-red-50 text-red-600 rounded-full"
                                                     >
                                                       <Trash2 className="size-4" />
@@ -1013,7 +1070,9 @@ export function StockHistoryDetailsPage({
                   <Package className="size-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {language === "ar" ? "لا توجد عناصر في هذه المسودة" : "No items in this draft"}
+                  {language === "ar"
+                    ? "لا توجد عناصر في هذه المسودة"
+                    : "No items in this draft"}
                 </h3>
                 <p className="text-sm text-gray-600 mb-5">
                   {language === "ar"
