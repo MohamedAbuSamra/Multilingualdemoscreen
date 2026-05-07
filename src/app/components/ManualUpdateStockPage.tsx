@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -9,9 +9,11 @@ import {
   Search,
   Sparkles,
   Trash2,
+  Upload,
   Boxes,
   PencilLine,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
@@ -33,6 +35,16 @@ import {
   TableRow,
 } from "./ui/table";
 import { AddProductDialog, type AddProductSource } from "./AddProductDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 import type { SelectedInventoryProductWithBatches } from "./MyProductsPanel";
 import type { ManualCustomProductInput } from "./ManualStockCustomProductPanel";
 import type { AumetCoreProduct } from "../data/aumetCoreProductsSample";
@@ -89,6 +101,79 @@ interface ProductGroupMeta {
 }
 
 type ProductGroupWithRows = ProductGroupMeta & { rows: StockItem[] };
+
+type ImportedStockRow = {
+  productCode: string;
+  productNameEn: string;
+  productNameAr: string;
+  barcode: string;
+  categoryKey: string;
+  batchNumber: string;
+  expiry: string;
+  warehouseZone: string;
+  currentStock: number;
+  stockTypeUpdate: "stockIn" | "stockOut";
+  newStockQty: string;
+  avgCost: string;
+  sellPrice: string;
+  reason: string;
+};
+
+const IMPORT_TEMPLATE_HEADERS = [
+  "productCode",
+  "productNameEn",
+  "productNameAr",
+  "barcode",
+  "categoryKey",
+  "batchNumber",
+  "expiry",
+  "warehouseZone",
+  "currentStock",
+  "stockTypeUpdate",
+  "newStockQty",
+  "avgCost",
+  "sellPrice",
+  "reason",
+] as const;
+
+function normalizeImportedValue(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "number") return String(value);
+  return String(value).trim();
+}
+
+function parseImportedStockRows(
+  rows: Record<string, unknown>[],
+): ImportedStockRow[] {
+  return rows
+    .map((row) => {
+      const stockTypeUpdate = normalizeImportedValue(row.stockTypeUpdate);
+      const normalizedStockType: ImportedStockRow["stockTypeUpdate"] =
+        stockTypeUpdate === "stockOut" ? "stockOut" : "stockIn";
+
+      return {
+        productCode: normalizeImportedValue(row.productCode),
+        productNameEn: normalizeImportedValue(row.productNameEn),
+        productNameAr: normalizeImportedValue(row.productNameAr),
+        barcode: normalizeImportedValue(row.barcode),
+        categoryKey: normalizeImportedValue(row.categoryKey) || "categoryOtc",
+        batchNumber: normalizeImportedValue(row.batchNumber),
+        expiry: normalizeImportedValue(row.expiry),
+        warehouseZone: normalizeImportedValue(row.warehouseZone),
+        currentStock: Number(normalizeImportedValue(row.currentStock)) || 0,
+        stockTypeUpdate: normalizedStockType,
+        newStockQty: normalizeImportedValue(row.newStockQty),
+        avgCost: normalizeImportedValue(row.avgCost),
+        sellPrice: normalizeImportedValue(row.sellPrice),
+        reason: normalizeImportedValue(row.reason),
+      };
+    })
+    .filter(
+      (row) =>
+        row.productCode &&
+        (row.productNameEn || row.productNameAr || row.barcode),
+    );
+}
 
 function buildCoreStockItem(product: AumetCoreProduct): StockItem {
   return {
@@ -225,6 +310,11 @@ export function ManualUpdateStockPage({
   ];
   const [searchQuery, setSearchQuery] = useState("");
   const [addProductDialogOpen, setAddProductDialogOpen] = useState(false);
+  const [importConfirmationOpen, setImportConfirmationOpen] = useState(false);
+  const [pendingImportedRows, setPendingImportedRows] = useState<
+    ImportedStockRow[]
+  >([]);
+  const [pendingImportFileName, setPendingImportFileName] = useState("");
   const [activeSource, setActiveSource] =
     useState<AddProductSource>("inventory");
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
@@ -246,6 +336,7 @@ export function ManualUpdateStockPage({
   const [useAumetReference, setUseAumetReference] = useState(true);
   const [autoGenerateBarcode, setAutoGenerateBarcode] = useState(true);
   const [resetExistingStock, setResetExistingStock] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const visibleRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -431,6 +522,121 @@ export function ManualUpdateStockPage({
 
       return [...current, buildCustomStockItem(product)];
     });
+  };
+
+  const applyImportedRowsToTable = (rows: ImportedStockRow[]) => {
+    if (rows.length === 0) return;
+
+    setProductGroups((current) => {
+      const existingCodes = new Set(current.map((item) => item.productCode));
+      const nextGroups = rows
+        .filter((row) => !existingCodes.has(row.productCode))
+        .map((row) => ({
+          key: `inventory::${row.productCode}`,
+          source: "inventory" as const,
+          productCode: row.productCode,
+          productNameEn: row.productNameEn || row.productCode,
+          productNameAr:
+            row.productNameAr || row.productNameEn || row.productCode,
+          subtitleEn: "",
+          subtitleAr: "",
+          barcode: row.barcode,
+          categoryKey: row.categoryKey,
+          largestUnit: "box" as const,
+          smallestUnit: "piece" as const,
+          smallestUnitsPerLargePack: "",
+        }));
+
+      return [...current, ...nextGroups];
+    });
+
+    setStockItems((current) => {
+      const existingRowKeys = new Set(
+        current.map((item) => `${item.productCode}::${item.batchNumber}`),
+      );
+
+      const nextItems = rows
+        .filter(
+          (row) =>
+            !existingRowKeys.has(`${row.productCode}::${row.batchNumber}`),
+        )
+        .map((row, index) => ({
+          id: `import-${row.productCode}-${row.batchNumber || "new"}-${Date.now()}-${index}`,
+          source: "inventory" as const,
+          productCode: row.productCode,
+          productNameEn: row.productNameEn || row.productCode,
+          productNameAr:
+            row.productNameAr || row.productNameEn || row.productCode,
+          subtitleEn: "",
+          subtitleAr: "",
+          barcode: row.barcode,
+          categoryKey: row.categoryKey,
+          batchNumber: row.batchNumber,
+          expiry: row.expiry,
+          warehouseZone: row.warehouseZone,
+          currentStock: row.currentStock,
+          stockTypeUpdate: row.stockTypeUpdate,
+          newStockQty: row.newStockQty,
+          avgCost: row.avgCost,
+          sellPrice: row.sellPrice,
+          reason: row.reason,
+        }));
+
+      return [...current, ...nextItems];
+    });
+  };
+
+  const handleImportButtonClick = () => {
+    if (importInputRef.current) {
+      importInputRef.current.value = "";
+      importInputRef.current.click();
+    }
+  };
+
+  const handleImportFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      const firstSheet = workbook.Sheets[firstSheetName];
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+        firstSheet,
+        {
+          defval: "",
+        },
+      );
+      const parsedRows = parseImportedStockRows(rawRows);
+
+      if (parsedRows.length === 0) {
+        setPendingImportedRows([]);
+        setPendingImportFileName("");
+        return;
+      }
+
+      setPendingImportedRows(parsedRows);
+      setPendingImportFileName(file.name);
+      setImportConfirmationOpen(true);
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handleConfirmImport = () => {
+    applyImportedRowsToTable(pendingImportedRows);
+    setImportConfirmationOpen(false);
+    setPendingImportedRows([]);
+    setPendingImportFileName("");
+  };
+
+  const handleCancelImportConfirmation = () => {
+    setImportConfirmationOpen(false);
+    setPendingImportedRows([]);
+    setPendingImportFileName("");
   };
 
   const removeStockItem = (id: string) => {
@@ -730,6 +936,14 @@ export function ManualUpdateStockPage({
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".csv,.xlsx,.xls"
+        onChange={handleImportFileChange}
+        className="hidden"
+      />
+
       <AddProductDialog
         open={addProductDialogOpen}
         onOpenChange={setAddProductDialogOpen}
@@ -740,6 +954,49 @@ export function ManualUpdateStockPage({
         onAddInventoryProducts={addInventoryProductsToTable}
         onAddCustomProduct={addCustomProductToTable}
       />
+
+      <AlertDialog
+        open={importConfirmationOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelImportConfirmation();
+          }
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl border-gray-200">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {language === "ar"
+                ? "تأكيد استيراد الملف"
+                : "Confirm file import"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {language === "ar"
+                ? `تم العثور على ${pendingImportedRows.length} صف في ${pendingImportFileName}. هل تريد إضافتها مباشرة إلى الجدول؟`
+                : `Found ${pendingImportedRows.length} row(s) in ${pendingImportFileName}. Do you want to add them directly to the table?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-900">
+            {language === "ar"
+              ? "سيتم إدراج المنتجات المستوردة داخل جدول التحديث اليدوي ويمكنك تعديلها قبل الحفظ."
+              : "Imported products will be inserted into the manual update table and remain editable before saving."}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleCancelImportConfirmation}
+              className="rounded-full"
+            >
+              {t("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmImport}
+              className="rounded-full bg-teal-500 text-white hover:bg-teal-600"
+            >
+              {language === "ar" ? "إضافة إلى الجدول" : "Add to table"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="p-6 space-y-3.5 flex-1" dir={isRTL ? "rtl" : "ltr"}>
         <div className={isRTL ? "text-right" : "text-left"}>
@@ -851,6 +1108,15 @@ export function ManualUpdateStockPage({
                   className={`ps-9 h-10 text-sm border-gray-300 rounded-full w-full ${isRTL ? "text-right" : "text-left"}`}
                 />
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleImportButtonClick}
+                className="h-10 gap-2 rounded-full border-teal-200 bg-teal-50 px-4 text-sm text-teal-700 whitespace-nowrap hover:bg-teal-100 hover:text-teal-800"
+              >
+                <Upload className="size-4" />
+                {language === "ar" ? "استيراد ملف" : "Import file"}
+              </Button>
               <Button
                 type="button"
                 onClick={() => {
