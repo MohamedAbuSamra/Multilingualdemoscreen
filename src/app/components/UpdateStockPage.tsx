@@ -16,6 +16,7 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
+  Layers3,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -41,6 +42,12 @@ import { ImportInventoryDialog } from "./ImportInventoryDialog";
 type UiLanguage = "en" | "ar";
 
 type StatusColor = "green" | "blue" | "yellow" | "red" | "purple" | "gray";
+type StockHistoryQuickFilter =
+  | "all"
+  | "adjustmentStatusDraft"
+  | "adjustmentStatusConfirmed"
+  | "adjustmentStatusReversal"
+  | "adjustmentStatusFailed";
 
 function formatStockDateTime(d: Date, language: UiLanguage): string {
   const locale = language === "ar" ? "ar" : "en-GB";
@@ -167,6 +174,8 @@ export function UpdateStockPage({
   const { t, language } = useLanguage();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [activeQuickFilter, setActiveQuickFilter] =
+    useState<StockHistoryQuickFilter>("all");
   const [stockHistoryRows, setStockHistoryRows] = useState(
     STOCK_ADJUSTMENT_HISTORY_RAW,
   );
@@ -174,6 +183,12 @@ export function UpdateStockPage({
   const stats = useMemo(
     () =>
       [
+        {
+          titleKey: "all" as const,
+          value: String(stockHistoryRows.length),
+          icon: Layers3,
+          iconClassName: "bg-teal-50 text-teal-600",
+        },
         {
           titleKey: "adjustmentStatusDraft",
           value: String(
@@ -218,9 +233,19 @@ export function UpdateStockPage({
     [stockHistoryRows],
   );
 
+  const filteredStockHistoryRows = useMemo(() => {
+    if (activeQuickFilter === "all") {
+      return stockHistoryRows;
+    }
+
+    return stockHistoryRows.filter(
+      (row) => row.statusKey === activeQuickFilter,
+    );
+  }, [activeQuickFilter, stockHistoryRows]);
+
   const stockHistory = useMemo(
     () =>
-      [...stockHistoryRows]
+      [...filteredStockHistoryRows]
         .sort((a, b) => {
           const statusDifference =
             getStatusOrder(a.statusKey) - getStatusOrder(b.statusKey);
@@ -241,8 +266,14 @@ export function UpdateStockPage({
           autoMigrated: row.autoMigrated,
           failedMigrated: row.failedMigrated,
         })),
-    [language, stockHistoryRows, t],
+    [filteredStockHistoryRows, language, t],
   );
+
+  const handleQuickFilterChange = (nextFilter: StockHistoryQuickFilter) => {
+    setActiveQuickFilter((current) =>
+      current === nextFilter ? "all" : nextFilter,
+    );
+  };
 
   const lastAdjustmentDateLabel = LAST_STOCK_ADJUSTMENT_DATE.toLocaleDateString(
     language === "ar" ? "ar" : "en-GB",
@@ -311,36 +342,53 @@ export function UpdateStockPage({
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
           {stats.map((stat) => {
             const Icon = stat.icon;
+            const isActive = activeQuickFilter === stat.titleKey;
             return (
-              <div
+              <button
                 key={stat.titleKey}
-                className="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-sm transition-shadow duration-200"
+                type="button"
+                onClick={() => handleQuickFilterChange(stat.titleKey)}
+                className={`cursor-pointer rounded-2xl border px-3.5 py-3 text-start transition-all duration-200 ${
+                  isActive
+                    ? "border-teal-300 bg-teal-50 shadow-sm ring-1 ring-teal-200"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                }`}
               >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-gray-500">
-                      {t(stat.titleKey)}
-                    </p>
-                    <div
-                      className={`size-8 rounded-xl ${stat.iconClassName} flex items-center justify-center shrink-0`}
-                    >
-                      <Icon className="size-4" />
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${stat.iconClassName}`}
+                  >
+                    <Icon className="size-3.5" />
                   </div>
 
-                  <div className="flex items-end justify-between gap-3">
-                    <p className="text-[28px] font-semibold leading-none tracking-tight text-gray-900">
-                      {stat.value}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-gray-500">
+                      {stat.titleKey === "all"
+                        ? language === "ar"
+                          ? "الكل"
+                          : "All"
+                        : t(stat.titleKey)}
                     </p>
-                    <span className="text-[11px] text-gray-400">
-                      {language === "ar" ? "سجل" : "records"}
-                    </span>
+                    <div className="mt-1 flex items-baseline justify-between gap-2">
+                      <p className="text-[22px] font-semibold leading-none tracking-tight text-gray-900">
+                        {stat.value}
+                      </p>
+                      <span
+                        className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                          isActive
+                            ? "border-teal-200 bg-white text-teal-700"
+                            : "border-teal-300 bg-white text-teal-600"
+                        }`}
+                      >
+                        {language === "ar" ? "مراجعة" : "Review"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
