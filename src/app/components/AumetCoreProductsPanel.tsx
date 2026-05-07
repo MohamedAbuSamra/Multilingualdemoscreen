@@ -11,14 +11,20 @@ import type { ProductCategoryKey } from "../data/pharmacyInventorySample";
 
 interface AumetCoreProductsPanelProps {
   selectedCodes: string[];
-  onAddProducts: (products: AumetCoreProduct[]) => void;
+  selectedProducts?: AumetCoreProduct[];
+  onSelectionChange?: (products: AumetCoreProduct[]) => void;
+  onAddProducts: (() => void) | ((products: AumetCoreProduct[]) => void);
   onCancel: () => void;
+  isVisible?: boolean;
 }
 
 export function AumetCoreProductsPanel({
   selectedCodes,
+  selectedProducts,
+  onSelectionChange,
   onAddProducts,
   onCancel,
+  isVisible = true,
 }: AumetCoreProductsPanelProps) {
   const ALL_CATEGORIES = "all";
   const ALL_MANUFACTURERS = "all";
@@ -40,6 +46,9 @@ export function AumetCoreProductsPanel({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  const isControlledSelection =
+    Array.isArray(selectedProducts) && typeof onSelectionChange === "function";
 
   const allProducts = useMemo(
     () =>
@@ -139,6 +148,12 @@ export function AumetCoreProductsPanel({
   }, [categoryFilter, manufacturerFilter, query, stockStatusFilter]);
 
   useEffect(() => {
+    if (!isControlledSelection || !selectedProducts) return;
+
+    setSelectedIds(selectedProducts.map((product) => product.id));
+  }, [isControlledSelection, selectedProducts]);
+
+  useEffect(() => {
     if (isSearchLoading) return;
 
     const node = loadMoreRef.current;
@@ -171,6 +186,22 @@ export function AumetCoreProductsPanel({
   }, [filteredProducts.length, isLoadingMore, isSearchLoading, visibleCount]);
 
   const toggleSelection = (productId: string) => {
+    if (isControlledSelection) {
+      const product = allProducts.find((item) => item.id === productId);
+
+      if (!product || !selectedProducts || !onSelectionChange) return;
+
+      if (selectedIds.includes(productId)) {
+        onSelectionChange(
+          selectedProducts.filter((item) => item.id !== productId),
+        );
+        return;
+      }
+
+      onSelectionChange([...selectedProducts, product]);
+      return;
+    }
+
     setSelectedIds((current) =>
       current.includes(productId)
         ? current.filter((id) => id !== productId)
@@ -179,6 +210,11 @@ export function AumetCoreProductsPanel({
   };
 
   const handleAdd = () => {
+    if (isControlledSelection) {
+      (onAddProducts as () => void)();
+      return;
+    }
+
     const selectedProducts = allProducts.filter((product) =>
       selectedIds.includes(product.id),
     );
@@ -195,7 +231,7 @@ export function AumetCoreProductsPanel({
   };
 
   return (
-    <>
+    <div className={isVisible ? "block" : "hidden"}>
       <div className="px-6 py-4 border-b border-gray-100 bg-white">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1">
@@ -480,28 +516,6 @@ export function AumetCoreProductsPanel({
           </>
         )}
       </div>
-
-      <div className="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-between gap-3">
-        <div className="text-sm text-gray-500">
-          {t("selectProductsToAddToManualStock")}
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            className="h-10 px-5 rounded-full border-gray-300"
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            onClick={handleAdd}
-            disabled={selectedIds.length === 0}
-            className="h-10 px-5 rounded-full bg-teal-500 hover:bg-teal-600"
-          >
-            {t("addSelectedProducts")}
-          </Button>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

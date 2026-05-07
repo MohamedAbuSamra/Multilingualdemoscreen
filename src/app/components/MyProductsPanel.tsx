@@ -26,14 +26,22 @@ export interface SelectedInventoryProductWithBatches {
 
 interface MyProductsPanelProps {
   selectedCodes: string[];
-  onAddProducts: (products: SelectedInventoryProductWithBatches[]) => void;
+  selectedProducts?: SelectedInventoryProductWithBatches[];
+  onSelectionChange?: (products: SelectedInventoryProductWithBatches[]) => void;
+  onAddProducts:
+    | (() => void)
+    | ((products: SelectedInventoryProductWithBatches[]) => void);
   onCancel: () => void;
+  isVisible?: boolean;
 }
 
 export function MyProductsPanel({
   selectedCodes,
+  selectedProducts,
+  onSelectionChange,
   onAddProducts,
   onCancel,
+  isVisible = true,
 }: MyProductsPanelProps) {
   const ALL_CATEGORIES = "all";
   const ALL_WAREHOUSES = "all";
@@ -57,6 +65,9 @@ export function MyProductsPanel({
   const [selectedBatchIdsByCode, setSelectedBatchIdsByCode] = useState<
     Record<string, string[]>
   >({});
+
+  const isControlledSelection =
+    Array.isArray(selectedProducts) && typeof onSelectionChange === "function";
 
   const categoryOptions = useMemo(
     () => [
@@ -106,6 +117,18 @@ export function MyProductsPanel({
     return () => window.clearTimeout(timer);
   }, [query]);
 
+  useEffect(() => {
+    if (!isControlledSelection) return;
+
+    setSelectedCodesState(selectedProducts.map(({ product }) => product.code));
+    setSelectedBatchIdsByCode(
+      selectedProducts.reduce<Record<string, string[]>>((accumulator, item) => {
+        accumulator[item.product.code] = item.selectedBatchIds;
+        return accumulator;
+      }, {}),
+    );
+  }, [isControlledSelection, selectedProducts]);
+
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -151,6 +174,30 @@ export function MyProductsPanel({
   };
 
   const toggleSelection = (productCode: string) => {
+    if (isControlledSelection) {
+      const product = PHARMACY_INVENTORY_PRODUCTS.find(
+        (item) => item.code === productCode,
+      );
+
+      if (!product || !selectedProducts || !onSelectionChange) return;
+
+      if (selectedCodesState.includes(productCode)) {
+        onSelectionChange(
+          selectedProducts.filter((item) => item.product.code !== productCode),
+        );
+        return;
+      }
+
+      onSelectionChange([
+        ...selectedProducts,
+        {
+          product,
+          selectedBatchIds: [],
+        },
+      ]);
+      return;
+    }
+
     setSelectedCodesState((current) => {
       if (current.includes(productCode)) {
         const next = current.filter((code) => code !== productCode);
@@ -175,6 +222,26 @@ export function MyProductsPanel({
   };
 
   const toggleBatchSelection = (productCode: string, batchId: string) => {
+    if (isControlledSelection) {
+      if (!selectedProducts || !onSelectionChange) return;
+
+      onSelectionChange(
+        selectedProducts.map((item) => {
+          if (item.product.code !== productCode) return item;
+
+          const next = item.selectedBatchIds.includes(batchId)
+            ? item.selectedBatchIds.filter((id) => id !== batchId)
+            : [...item.selectedBatchIds, batchId];
+
+          return {
+            ...item,
+            selectedBatchIds: next,
+          };
+        }),
+      );
+      return;
+    }
+
     setSelectedBatchIdsByCode((current) => {
       const existing = current[productCode] ?? [];
       const next = existing.includes(batchId)
@@ -189,6 +256,11 @@ export function MyProductsPanel({
   };
 
   const handleAdd = () => {
+    if (isControlledSelection) {
+      (onAddProducts as () => void)();
+      return;
+    }
+
     const selectedProducts = PHARMACY_INVENTORY_PRODUCTS.filter((product) =>
       selectedCodesState.includes(product.code),
     ).map((product) => ({
@@ -204,7 +276,7 @@ export function MyProductsPanel({
   };
 
   return (
-    <>
+    <div className={isVisible ? "block" : "hidden"}>
       <div className="border-b border-gray-100 bg-white px-6 py-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1">
@@ -595,28 +667,6 @@ export function MyProductsPanel({
           </div>
         )}
       </div>
-
-      <div className="flex items-center justify-between gap-3 border-t border-gray-200 bg-white px-6 py-4">
-        <div className="text-sm text-gray-500">
-          {t("selectProductsFromInventory")}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            className="h-10 rounded-full border-gray-300 px-5"
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            onClick={handleAdd}
-            disabled={selectedCodesState.length === 0}
-            className="h-10 rounded-full bg-sky-500 px-5 hover:bg-sky-600"
-          >
-            {t("addSelectedProducts")}
-          </Button>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

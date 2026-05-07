@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { Button } from "./ui/button";
 import { useLanguage } from "../contexts/LanguageContext";
 import { AumetCoreProductsPanel } from "./AumetCoreProductsPanel";
 import {
@@ -47,6 +48,15 @@ export function AddProductDialog({
   const { t, language } = useLanguage();
   const isRTL = language === "ar";
   const [isOpeningLoading, setIsOpeningLoading] = useState(false);
+  const [selectedCoreProducts, setSelectedCoreProducts] = useState<
+    AumetCoreProduct[]
+  >([]);
+  const [selectedInventoryProducts, setSelectedInventoryProducts] = useState<
+    SelectedInventoryProductWithBatches[]
+  >([]);
+
+  const totalSelectedCount =
+    selectedCoreProducts.length + selectedInventoryProducts.length;
 
   const sourceOptions: {
     key: AddProductSource;
@@ -103,6 +113,27 @@ export function AddProductDialog({
     return () => window.clearTimeout(timer);
   }, [onActiveSourceChange, open]);
 
+  const handleAddSelected = () => {
+    if (selectedCoreProducts.length > 0) {
+      onAddCoreProducts(selectedCoreProducts);
+    }
+
+    if (selectedInventoryProducts.length > 0) {
+      onAddInventoryProducts(selectedInventoryProducts);
+    }
+
+    if (
+      selectedCoreProducts.length > 0 ||
+      selectedInventoryProducts.length > 0
+    ) {
+      setSelectedCoreProducts([]);
+      setSelectedInventoryProducts([]);
+      onOpenChange(false);
+    }
+  };
+
+  const showLoading = isOpeningLoading;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1100px] w-[92vw] p-0 gap-0 rounded-3xl overflow-hidden">
@@ -156,7 +187,7 @@ export function AddProductDialog({
           </div>
         </DialogHeader>
 
-        {isOpeningLoading ? (
+        {showLoading ? (
           <div className="flex min-h-[420px] flex-col items-center justify-center gap-3 bg-white px-6 py-10 text-center">
             <div className="flex size-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
               <Loader2 className="size-5 animate-spin" />
@@ -172,33 +203,63 @@ export function AddProductDialog({
               </div>
             </div>
           </div>
-        ) : activeSource === "core" ? (
-          <AumetCoreProductsPanel
-            selectedCodes={selectedCodes}
-            onAddProducts={(products) => {
-              onAddCoreProducts(products);
-              onOpenChange(false);
-            }}
-            onCancel={() => onOpenChange(false)}
-          />
-        ) : activeSource === "inventory" ? (
-          <MyProductsPanel
-            selectedCodes={selectedCodes}
-            onAddProducts={(products) => {
-              onAddInventoryProducts(products);
-              onOpenChange(false);
-            }}
-            onCancel={() => onOpenChange(false)}
-          />
         ) : (
-          <ManualStockCustomProductPanel
-            existingCodes={selectedCodes}
-            onAddProduct={(product) => {
-              onAddCustomProduct(product);
-              onOpenChange(false);
-            }}
-            onCancel={() => onOpenChange(false)}
-          />
+          <>
+            <AumetCoreProductsPanel
+              selectedCodes={selectedCodes}
+              selectedProducts={selectedCoreProducts}
+              onSelectionChange={setSelectedCoreProducts}
+              onAddProducts={handleAddSelected}
+              onCancel={() => onOpenChange(false)}
+              isVisible={activeSource === "core"}
+            />
+            <MyProductsPanel
+              selectedCodes={selectedCodes}
+              selectedProducts={selectedInventoryProducts}
+              onSelectionChange={setSelectedInventoryProducts}
+              onAddProducts={handleAddSelected}
+              onCancel={() => onOpenChange(false)}
+              isVisible={activeSource === "inventory"}
+            />
+            {activeSource === "custom" && (
+              <ManualStockCustomProductPanel
+                existingCodes={selectedCodes}
+                onAddProduct={(product) => {
+                  onAddCustomProduct(product);
+                  onOpenChange(false);
+                }}
+                onCancel={() => onOpenChange(false)}
+              />
+            )}
+          </>
+        )}
+
+        {activeSource !== "custom" && !showLoading && (
+          <div className="border-t border-gray-200 bg-white px-6 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm text-gray-500">
+                {language === "ar"
+                  ? `تم تحديد ${totalSelectedCount} منتج`
+                  : `${totalSelectedCount} products selected`}
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="h-10 rounded-full border-gray-300 px-5"
+                >
+                  {t("cancel")}
+                </Button>
+                <Button
+                  onClick={handleAddSelected}
+                  disabled={totalSelectedCount === 0}
+                  className="h-10 rounded-full bg-teal-500 px-5 hover:bg-teal-600"
+                >
+                  {t("addSelectedProducts")}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>
