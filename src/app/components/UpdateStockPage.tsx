@@ -311,27 +311,33 @@ export function UpdateStockPage({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
               <div
                 key={stat.titleKey}
-                className="bg-white border border-gray-200 rounded-2xl p-5 min-h-[132px] hover:shadow-sm transition-shadow duration-200"
+                className="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-sm transition-shadow duration-200"
               >
-                <div className="flex items-start justify-between gap-4 h-full">
-                  <div className="flex flex-col justify-between h-full">
-                    <p className="text-sm font-medium text-gray-600">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-gray-500">
                       {t(stat.titleKey)}
                     </p>
-                    <p className="text-3xl font-bold tracking-tight text-gray-900">
+                    <div
+                      className={`size-8 rounded-xl ${stat.iconClassName} flex items-center justify-center shrink-0`}
+                    >
+                      <Icon className="size-4" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-end justify-between gap-3">
+                    <p className="text-[28px] font-semibold leading-none tracking-tight text-gray-900">
                       {stat.value}
                     </p>
-                  </div>
-                  <div
-                    className={`size-11 rounded-2xl ${stat.iconClassName} flex items-center justify-center shrink-0`}
-                  >
-                    <Icon className="size-5" />
+                    <span className="text-[11px] text-gray-400">
+                      {language === "ar" ? "سجل" : "records"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -362,6 +368,15 @@ export function UpdateStockPage({
               >
                 <Filter className="size-4" strokeWidth={2} />
                 {t("filters")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportDialogOpen(true)}
+                className="h-10 gap-2 px-4 text-sm rounded-full border-teal-200 bg-teal-50 text-teal-700 whitespace-nowrap hover:bg-teal-100 hover:text-teal-800"
+              >
+                <Upload className="size-4" strokeWidth={2} />
+                {language === "ar" ? "استيراد" : "Import"}
               </Button>
             </div>
           </div>

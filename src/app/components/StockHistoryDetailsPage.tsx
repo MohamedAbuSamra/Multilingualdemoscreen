@@ -1,8 +1,10 @@
-import { Save, Search } from "lucide-react";
+import { Filter, Save, Search, Upload } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { useLanguage } from "../contexts/LanguageContext";
+import { FiltersSection } from "./FiltersSection";
+import { ImportInventoryDialog } from "./ImportInventoryDialog";
 import {
   Select,
   SelectContent,
@@ -195,6 +197,8 @@ export function StockHistoryDetailsPage({
 }: StockHistoryDetailsPageProps) {
   const { t, language } = useLanguage();
   const isRTL = language === "ar";
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [stockItems, setStockItems] = useState<StockHistoryItem[]>(
     STOCK_HISTORY_DETAILS_SAMPLE,
@@ -242,6 +246,11 @@ export function StockHistoryDetailsPage({
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
+      <ImportInventoryDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onNavigate={onNavigate}
+      />
       <div className="p-6 space-y-5 flex-1" dir={isRTL ? "rtl" : "ltr"}>
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <span className="text-teal-600 cursor-pointer">{t("dashboard")}</span>
@@ -277,7 +286,7 @@ export function StockHistoryDetailsPage({
 
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
           <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <div className="relative flex-1">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                 <Input
@@ -288,8 +297,34 @@ export function StockHistoryDetailsPage({
                   className={`ps-9 h-10 text-sm border-gray-300 rounded-full w-full ${isRTL ? "text-right" : "text-left"}`}
                 />
               </div>
+              <div className="flex flex-wrap items-center gap-2 lg:ms-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFiltersOpen(!filtersOpen)}
+                  className={`h-10 gap-2 px-3 rounded-full border-gray-300 whitespace-nowrap ${
+                    filtersOpen
+                      ? "bg-teal-50 border-teal-600 text-teal-600"
+                      : ""
+                  }`}
+                >
+                  <Filter className="size-4" strokeWidth={2} />
+                  {t("filters")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImportDialogOpen(true)}
+                  className="h-10 gap-2 px-3 rounded-full border-teal-200 bg-teal-50 text-teal-700 whitespace-nowrap hover:bg-teal-100 hover:text-teal-800"
+                >
+                  <Upload className="size-4" strokeWidth={2} />
+                  {language === "ar" ? "استيراد" : "Import"}
+                </Button>
+              </div>
             </div>
           </div>
+
+          <FiltersSection isOpen={filtersOpen} type="stockHistory" />
 
           <div className="overflow-x-auto">
             <Table>
