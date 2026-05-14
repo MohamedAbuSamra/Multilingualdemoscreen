@@ -4,6 +4,8 @@ export const PHARMACY_INVENTORY_PRODUCTS_V2: InventoryProduct[] = [
   {
     id: "product-1",
     code: "PH-201",
+    imageUrl:
+      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=240&q=80",
     nameEn: "Pantoprazole Sodium 40 mg",
     nameAr: "بانتوبرازول صوديوم ٤٠ مجم",
     subtitleEn: "Gastro-Resistant Tablets, 30s, 20 Packs per Case",
@@ -38,6 +40,8 @@ export const PHARMACY_INVENTORY_PRODUCTS_V2: InventoryProduct[] = [
   {
     id: "product-2",
     code: "PH-105",
+    imageUrl:
+      "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?auto=format&fit=crop&w=240&q=80",
     nameEn: "Amoxicillin 500 mg Capsules",
     nameAr: "أموكسيسيلين ٥٠٠ مجم كبسولات",
     subtitleEn: "21 Capsules, 48 Units per Case",
@@ -97,6 +101,8 @@ export const PHARMACY_INVENTORY_PRODUCTS_V2: InventoryProduct[] = [
   {
     id: "product-4",
     code: "PH-410",
+    imageUrl:
+      "https://images.unsplash.com/photo-1576602976047-174e57a47881?auto=format&fit=crop&w=240&q=80",
     nameEn: "Cholecalciferol (Vitamin D3) 1,000 IU",
     nameAr: "فيتامين د٣ ١٠٠٠ وحدة",
     subtitleEn: "Softgels, 60s, 12 Bottles per Case",
@@ -199,6 +205,8 @@ export const PHARMACY_INVENTORY_PRODUCTS_V2: InventoryProduct[] = [
   {
     id: "product-7",
     code: "PH-600",
+    imageUrl:
+      "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=240&q=80",
     nameEn: "Hydrocortisone 1% Cream",
     nameAr: "هيدروكورتيزون ١٪ كريم",
     subtitleEn: "30 g Tube, 24 Tubes per Case",

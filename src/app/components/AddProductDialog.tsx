@@ -77,7 +77,7 @@ export function AddProductDialog({
     },
     {
       key: "inventory",
-      label: t("myProducts"),
+      label: language === "ar" ? "مخزوني" : "My Inventory",
       description:
         language === "ar"
           ? "اختر من منتجات مخزونك الحالية"

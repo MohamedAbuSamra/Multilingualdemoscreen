@@ -9,7 +9,6 @@ import {
   Search,
   Sparkles,
   Trash2,
-  Upload,
   Boxes,
   PencilLine,
 } from "lucide-react";
@@ -392,6 +391,14 @@ export function ManualUpdateStockPage({
     );
   }, [searchQuery, stockItems]);
 
+  const hasExistingInventoryProducts =
+    PHARMACY_INVENTORY_PRODUCTS_V2.length > 0;
+
+  const handleUseExistingInventoryProducts = () => {
+    setActiveSource("inventory");
+    setAddProductDialogOpen(true);
+  };
+
   const addCoreProductsToTable = (products: AumetCoreProduct[]) => {
     setProductGroups((current) => {
       const existingCodes = new Set(current.map((item) => item.productCode));
@@ -618,13 +625,6 @@ export function ManualUpdateStockPage({
 
       return [...current, ...nextItems];
     });
-  };
-
-  const handleImportButtonClick = () => {
-    if (importInputRef.current) {
-      importInputRef.current.value = "";
-      importInputRef.current.click();
-    }
   };
 
   const handleImportFileChange = async (
@@ -1145,40 +1145,33 @@ export function ManualUpdateStockPage({
         </div>
 
         <div className="-mx-6 sm:mx-0 bg-white border border-gray-200 rounded-none sm:rounded-2xl overflow-visible">
-          <div className="p-4 border-b border-gray-200 space-y-3 bg-gradient-to-b from-gray-50 to-white">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("searchManualStockTable")}
-                  dir={isRTL ? "rtl" : "ltr"}
-                  className={`ps-9 h-10 text-sm border-gray-300 rounded-full w-full ${isRTL ? "text-right" : "text-left"}`}
-                />
+          {stockItems.length > 0 && (
+            <div className="p-4 border-b border-gray-200 space-y-3 bg-gradient-to-b from-gray-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t("searchManualStockTable")}
+                    dir={isRTL ? "rtl" : "ltr"}
+                    className={`ps-9 h-10 text-sm border-gray-300 rounded-full w-full ${isRTL ? "text-right" : "text-left"}`}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setActiveSource("core");
+                    setAddProductDialogOpen(true);
+                  }}
+                  className="h-10 gap-2 rounded-full bg-teal-500 px-4 text-sm text-white whitespace-nowrap hover:bg-teal-600"
+                >
+                  <Plus className="size-4" />
+                  {t("addProduct")}
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleImportButtonClick}
-                className="h-10 gap-2 rounded-full border-teal-200 bg-teal-50 px-4 text-sm text-teal-700 whitespace-nowrap hover:bg-teal-100 hover:text-teal-800"
-              >
-                <Upload className="size-4" />
-                {language === "ar" ? "استيراد ملف" : "Import file"}
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  setActiveSource("core");
-                  setAddProductDialogOpen(true);
-                }}
-                className="h-10 gap-2 rounded-full bg-teal-500 px-4 text-sm text-white whitespace-nowrap hover:bg-teal-600"
-              >
-                <Plus className="size-4" />
-                {t("addProduct")}
-              </Button>
             </div>
-          </div>
+          )}
 
           {stockItems.length > 0 ? (
             <>
@@ -1909,27 +1902,67 @@ export function ManualUpdateStockPage({
               </div>
             </>
           ) : (
-            <div className="p-12 text-center">
-              <div className="max-w-md mx-auto">
-                <div className="size-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="size-8 text-gray-400" />
+            <div className="p-8 sm:p-12">
+              <div className="mx-auto max-w-4xl rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+                <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+                  <div className={isRTL ? "text-right" : "text-left"}>
+                    <div className="flex size-16 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
+                      <Package className="size-8" />
+                    </div>
+                    <h3 className="mt-5 text-2xl font-semibold tracking-tight text-gray-950">
+                      {t("noProductsAddedYet")}
+                    </h3>
+                    <p className="mt-3 max-w-lg text-sm leading-7 text-gray-600 sm:text-base">
+                      {t("manualStockEmptyStateDescription")}
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <Button
+                        onClick={() => {
+                          setActiveSource("core");
+                          setAddProductDialogOpen(true);
+                        }}
+                        className="h-11 rounded-full bg-teal-600 px-6 text-sm font-semibold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-600/30"
+                      >
+                        <Plus className="size-4" />
+                        {t("addProduct")}
+                      </Button>
+                      {hasExistingInventoryProducts && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleUseExistingInventoryProducts}
+                          className="h-11 rounded-full border-teal-200 bg-white px-5 text-sm font-medium text-teal-700 hover:bg-teal-50 hover:text-teal-800"
+                        >
+                          <Boxes className="size-4" />
+                          {language === "ar"
+                            ? "استخدم منتجاتي الحالية"
+                            : "Use my existing products"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                    <div className="rounded-[20px] border border-dashed border-teal-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                        <div className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+                        <div className="h-2.5 w-24 rounded-full bg-gray-200" />
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {[0, 1, 2].map((row) => (
+                          <div
+                            key={row}
+                            className="grid grid-cols-[1.2fr_0.8fr_0.7fr] gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-3 py-3"
+                          >
+                            <div className="h-9 rounded-full bg-white" />
+                            <div className="h-9 rounded-full bg-white" />
+                            <div className="h-9 rounded-full bg-white" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {t("noProductsAddedYet")}
-                </h3>
-                <p className="text-sm text-gray-600 mb-5">
-                  {t("manualStockEmptyStateDescription")}
-                </p>
-                <Button
-                  onClick={() => {
-                    setActiveSource("core");
-                    setAddProductDialogOpen(true);
-                  }}
-                  className="bg-teal-500 hover:bg-teal-600 rounded-full h-10 px-5 gap-2"
-                >
-                  <Plus className="size-4" />
-                  {t("addProduct")}
-                </Button>
               </div>
             </div>
           )}

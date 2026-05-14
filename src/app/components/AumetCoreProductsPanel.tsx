@@ -360,31 +360,34 @@ export function AumetCoreProductsPanel({
       </div>
 
       <div className="max-h-[60vh] overflow-y-auto bg-gray-50 px-6 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div className="grid grid-cols-[minmax(0,2.4fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+            <div>{t("product")}</div>
+            <div>{t("category")}</div>
+            <div>{t("manufacturer")}</div>
+            <div>{t("avgCostPrice")}</div>
+            <div>{t("sellPrice")}</div>
+            <div className="text-end">{t("status")}</div>
+          </div>
           {isSearchLoading
             ? Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
-                  className="rounded-2xl border border-gray-200 bg-white p-4 animate-pulse"
+                  className="grid grid-cols-[minmax(0,2.4fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] gap-3 border-b border-gray-100 px-4 py-3 animate-pulse"
                 >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="size-16 rounded-2xl bg-gray-200 shrink-0" />
+                  <div className="flex items-center gap-3">
+                    <div className="size-12 rounded-xl bg-gray-200 shrink-0" />
                     <div className="flex-1 space-y-2">
                       <div className="h-3 w-20 rounded bg-gray-200" />
                       <div className="h-4 w-3/4 rounded bg-gray-200" />
-                      <div className="h-3 w-full rounded bg-gray-100" />
+                      <div className="h-3 w-1/2 rounded bg-gray-100" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <div className="h-3 w-14 rounded bg-gray-100" />
-                      <div className="h-3 w-full rounded bg-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 w-14 rounded bg-gray-100" />
-                      <div className="h-3 w-2/3 rounded bg-gray-200" />
-                    </div>
-                  </div>
+                  <div className="h-4 w-20 self-center rounded bg-gray-100" />
+                  <div className="h-4 w-24 self-center rounded bg-gray-100" />
+                  <div className="h-4 w-14 self-center rounded bg-gray-100" />
+                  <div className="h-4 w-14 self-center rounded bg-gray-100" />
+                  <div className="h-6 w-16 self-center justify-self-end rounded-full bg-gray-100" />
                 </div>
               ))
             : visibleProducts.map((product) => {
@@ -398,100 +401,72 @@ export function AumetCoreProductsPanel({
                     onClick={() =>
                       !isAlreadyAdded && toggleSelection(product.id)
                     }
-                    className={`w-full text-start rounded-2xl border p-4 transition-all relative ${
+                    className={`grid w-full grid-cols-[minmax(0,2.4fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] gap-3 border-b px-4 py-3 text-start transition-all relative ${
                       isAlreadyAdded
-                        ? "border-amber-200 bg-amber-50/70"
+                        ? "border-amber-100 bg-amber-50/70"
                         : isSelected
-                          ? "border-teal-500 bg-teal-50 shadow-sm"
-                          : "border-gray-200 bg-white hover:border-teal-300 hover:shadow-sm"
+                          ? "border-teal-100 bg-teal-50"
+                          : "border-gray-100 bg-white hover:bg-teal-50/40"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div className="size-16 rounded-2xl border border-gray-200 bg-white overflow-hidden shrink-0">
-                          <img
-                            src={product.imageUrl}
-                            alt={
-                              language === "ar"
-                                ? product.nameAr
-                                : product.nameEn
-                            }
-                            className="size-full object-cover"
-                            loading="lazy"
-                          />
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="size-11 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                        <img
+                          src={product.imageUrl}
+                          alt={
+                            language === "ar" ? product.nameAr : product.nameEn
+                          }
+                          className="size-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-gray-900">
+                          {language === "ar" ? product.nameAr : product.nameEn}
                         </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-semibold text-teal-600 mb-1">
+                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500">
+                          <span className="font-semibold text-teal-600">
                             {product.code}
-                          </div>
-                          <div className="text-sm font-semibold text-gray-900 line-clamp-2">
-                            {language === "ar"
-                              ? product.nameAr
-                              : product.nameEn}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {language === "ar"
-                              ? product.subtitleAr
-                              : product.subtitleEn}
-                          </div>
+                          </span>
+                          <span className="truncate">{product.barcode}</span>
                         </div>
                       </div>
+                    </div>
+                    <div className="self-center truncate text-xs text-gray-700">
+                      {t(product.categoryKey)}
+                    </div>
+                    <div className="self-center truncate text-xs text-gray-700">
+                      {language === "ar"
+                        ? product.manufacturerAr
+                        : product.manufacturerEn}
+                    </div>
+                    <div className="self-center text-xs font-medium text-gray-800">
+                      {t("jod")} {product.avgCost}
+                    </div>
+                    <div className="self-center text-xs font-medium text-gray-800">
+                      {t("jod")} {product.sellPrice}
+                    </div>
+                    <div className="flex items-center justify-end gap-2 self-center">
+                      {isAlreadyAdded ? (
+                        <div className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                          {t("alreadyAdded")}
+                        </div>
+                      ) : isSelected ? (
+                        <div className="inline-flex rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-medium text-teal-700">
+                          {t("selectedItems")}
+                        </div>
+                      ) : null}
                       {!isAlreadyAdded && (
                         <div
-                          className={`min-w-6 h-6 rounded-full border flex items-center justify-center shrink-0 px-1 ${
+                          className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border px-1 ${
                             isSelected
                               ? "border-teal-500 bg-teal-500 text-white"
                               : "border-gray-300 bg-white text-transparent"
                           }`}
                         >
-                          <Check className="size-3.5" />
+                          <Check className="size-3" />
                         </div>
                       )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <div className="text-gray-500">{t("barcode")}</div>
-                        <div className="font-medium text-gray-800">
-                          {product.barcode}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500">{t("category")}</div>
-                        <div className="font-medium text-gray-800">
-                          {t(product.categoryKey)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500">{t("avgCostPrice")}</div>
-                        <div className="font-medium text-gray-800">
-                          {t("jod")} {product.avgCost}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500">{t("sellPrice")}</div>
-                        <div className="font-medium text-gray-800">
-                          {t("jod")} {product.sellPrice}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-3 text-xs">
-                      <div className="text-gray-500">
-                        {t("manufacturer")}:{" "}
-                        {language === "ar"
-                          ? product.manufacturerAr
-                          : product.manufacturerEn}
-                      </div>
-                      {isAlreadyAdded ? (
-                        <div className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">
-                          {t("alreadyAdded")}
-                        </div>
-                      ) : isSelected ? (
-                        <div className="inline-flex rounded-full bg-teal-100 px-2.5 py-1 font-medium text-teal-700">
-                          {t("selectedItems")}
-                        </div>
-                      ) : null}
                     </div>
                   </button>
                 );

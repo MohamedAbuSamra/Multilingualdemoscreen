@@ -1,3 +1,79 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+@keyframes rewardPopIn {
+	0% {
+		opacity: 0;
+		transform: translateY(18px) scale(0.94);
+	}
+
+	60% {
+		opacity: 1;
+		transform: translateY(-6px) scale(1.02);
+	}
+
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes rewardPulseGlow {
+	0%,
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.18);
+	}
+
+	50% {
+		transform: scale(1.06);
+		box-shadow: 0 0 0 18px rgba(255, 255, 255, 0);
+	}
+}
+
+@keyframes rewardConfettiFloat {
+	0% {
+		opacity: 0;
+		transform: translate3d(0, -12px, 0) rotate(0deg) scale(0.8);
+	}
+
+	20% {
+		opacity: 1;
+	}
+
+	100% {
+		opacity: 0;
+		transform: translate3d(var(--reward-x, 0), var(--reward-y, 120px), 0)
+			rotate(var(--reward-rotate, 180deg)) scale(1.05);
+	}
+}
+
+.reward-dialog-shell {
+	animation: rewardPopIn 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.reward-badge-glow {
+	animation: rewardPulseGlow 2.4s ease-in-out infinite;
+}
+
+.reward-confetti {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.reward-confetti-piece {
+	position: absolute;
+	top: var(--reward-top, 12%);
+	left: var(--reward-left, 50%);
+	width: var(--reward-size, 12px);
+	height: calc(var(--reward-size, 12px) * 1.8);
+	border-radius: 999px;
+	background: var(--reward-color, rgba(255, 255, 255, 0.9));
+	opacity: 0;
+	transform-origin: center;
+	animation: rewardConfettiFloat var(--reward-duration, 2200ms) ease-out infinite;
+	animation-delay: var(--reward-delay, 0ms);
+}

@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import {
-  X,
   FileSpreadsheet,
   Download,
   Sparkles,
@@ -11,10 +10,12 @@ import {
   Trash2,
   CheckCircle2,
   AlertTriangle,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
 import { useLanguage } from "../contexts/LanguageContext";
+import { PHARMACY_INVENTORY_PRODUCTS_V2 } from "../data/pharmacyInventoryProducts";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import {
 interface ImportInventoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onImportSuccess?: () => void;
   onNavigate?: (
     page:
       | "products"
@@ -38,6 +40,7 @@ interface ImportInventoryDialogProps {
 export function ImportInventoryDialog({
   open,
   onOpenChange,
+  onImportSuccess,
   onNavigate,
 }: ImportInventoryDialogProps) {
   const { t } = useLanguage();
@@ -45,6 +48,7 @@ export function ImportInventoryDialog({
   const [autoGenerateBarcode, setAutoGenerateBarcode] = useState(true);
   const [resetExistingStock, setResetExistingStock] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isProcessingImport, setIsProcessingImport] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,8 +78,92 @@ export function ImportInventoryDialog({
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
+  const handleImport = () => {
+    if (!selectedFile || isProcessingImport) {
+      return;
+    }
+
+    setIsProcessingImport(true);
+
+    window.setTimeout(() => {
+      setIsProcessingImport(false);
+      onImportSuccess?.();
+      onOpenChange(false);
+    }, 1800);
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setIsProcessingImport(false);
+    }
+
+    onOpenChange(nextOpen);
+  };
+
+  const escapeCsvValue = (value: string) => {
+    const normalizedValue = value.replace(/"/g, '""');
+    return `"${normalizedValue}"`;
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      "productCode",
+      "productNameEn",
+      "productNameAr",
+      "barcode",
+      "category",
+      "batchNumber",
+      "expiryDate",
+      "quantity",
+      "avgCost",
+      "sellPrice",
+      "tax",
+      "warehouseZone",
+      "subtitleEn",
+      "subtitleAr",
+    ];
+
+    const rows = PHARMACY_INVENTORY_PRODUCTS_V2.flatMap((product) =>
+      product.batches.map((batch) => [
+        product.code,
+        product.nameEn,
+        product.nameAr,
+        product.barcode,
+        t(product.categoryKey),
+        batch.batchNumber,
+        batch.expiry,
+        batch.stockQty,
+        batch.avgCost,
+        batch.sellPrice,
+        product.tax,
+        batch.warehouseZone,
+        product.subtitleEn,
+        product.subtitleAr,
+      ]),
+    );
+
+    const csvContent = [headers, ...rows]
+      .map((row) =>
+        row.map((value) => escapeCsvValue(String(value ?? ""))).join(","),
+      )
+      .join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = downloadUrl;
+    link.download = "inventory-import-template.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="max-w-[1600px] w-[75vw] p-0 gap-0 rounded-3xl">
         <DialogHeader className="px-6 py-4 border-b border-gray-200">
           <DialogTitle className="text-xl font-bold text-gray-900">
@@ -323,7 +411,10 @@ export function ImportInventoryDialog({
           {/* Help Options Row */}
           <div className="grid grid-cols-2 gap-4 mt-5">
             {/* Download Template */}
-            <button className="flex items-center gap-3 p-3 bg-white border-2 border-teal-200 hover:border-teal-400 rounded-xl transition-all group">
+            <button
+              onClick={handleDownloadTemplate}
+              className="flex items-center gap-3 p-3 bg-white border-2 border-teal-200 hover:border-teal-400 rounded-xl transition-all group"
+            >
               <div className="bg-teal-100 p-2 rounded-lg group-hover:bg-teal-200 transition-colors">
                 <Download className="size-5 text-teal-700" />
               </div>
@@ -375,15 +466,20 @@ export function ImportInventoryDialog({
               {t("cancel")}
             </Button>
             <Button
+              onClick={handleImport}
               className={`rounded-full px-6 text-sm h-auto py-1.5 flex items-center gap-2 ${
-                selectedFile
+                selectedFile && !isProcessingImport
                   ? "bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-600/20 hover:shadow-lg hover:shadow-teal-600/30"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
-              disabled={!selectedFile}
+              disabled={!selectedFile || isProcessingImport}
             >
-              <Upload className="size-4" />
-              {t("uploadProcess")}
+              {isProcessingImport ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <Upload className="size-4" />
+              )}
+              {isProcessingImport ? t("processingImport") : t("uploadProcess")}
             </Button>
           </div>
         </div>

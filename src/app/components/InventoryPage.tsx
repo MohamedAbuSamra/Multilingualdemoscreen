@@ -26,6 +26,14 @@ import {
   Tags,
   Factory,
   Shapes,
+  CheckCircle2,
+  FileSpreadsheet,
+  Sparkles,
+  Gift,
+  Store,
+  ShoppingCart,
+  Receipt,
+  PackageCheck,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -130,6 +138,8 @@ const CREATE_ENTITY_COPY: Record<
 
 export function InventoryPage({ onNavigate }: InventoryPageProps) {
   const { t, language } = useLanguage();
+  const [hasImportedInventory, setHasImportedInventory] = useState(false);
+  const [showRewardDialog, setShowRewardDialog] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -387,6 +397,224 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
     handleCreateEntityOpenChange(false);
   };
 
+  const handleImportSuccess = () => {
+    setHasImportedInventory(true);
+    setShowRewardDialog(true);
+  };
+
+  const rewardActions = [
+    {
+      icon: Receipt,
+      label: t("rewardActionPosTransactions"),
+      amount: "+JOD 3.5",
+    },
+    {
+      icon: Store,
+      label: t("rewardActionStartSelling"),
+      amount: "+JOD 7",
+    },
+    {
+      icon: ShoppingCart,
+      label: t("rewardActionBuyConfirm"),
+      amount: "+JOD 7",
+    },
+    {
+      icon: PackageCheck,
+      label: t("rewardActionConfirmMarketplace"),
+      amount: "+JOD 7",
+    },
+  ];
+
+  const rewardConfettiPieces = [
+    {
+      left: "10%",
+      top: "14%",
+      size: "10px",
+      color: "#fde68a",
+      x: "-18px",
+      y: "120px",
+      rotate: "160deg",
+      duration: "2200ms",
+      delay: "0ms",
+    },
+    {
+      left: "22%",
+      top: "8%",
+      size: "12px",
+      color: "#ffffff",
+      x: "24px",
+      y: "132px",
+      rotate: "220deg",
+      duration: "2500ms",
+      delay: "180ms",
+    },
+    {
+      left: "38%",
+      top: "16%",
+      size: "9px",
+      color: "#fdba74",
+      x: "-10px",
+      y: "118px",
+      rotate: "140deg",
+      duration: "2100ms",
+      delay: "320ms",
+    },
+    {
+      left: "62%",
+      top: "10%",
+      size: "11px",
+      color: "#fed7aa",
+      x: "18px",
+      y: "126px",
+      rotate: "200deg",
+      duration: "2400ms",
+      delay: "120ms",
+    },
+    {
+      left: "78%",
+      top: "15%",
+      size: "10px",
+      color: "#ffffff",
+      x: "-22px",
+      y: "136px",
+      rotate: "260deg",
+      duration: "2600ms",
+      delay: "260ms",
+    },
+    {
+      left: "90%",
+      top: "9%",
+      size: "8px",
+      color: "#fde68a",
+      x: "14px",
+      y: "112px",
+      rotate: "180deg",
+      duration: "2000ms",
+      delay: "420ms",
+    },
+  ];
+
+  if (!hasImportedInventory) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
+        <ImportInventoryDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          onImportSuccess={handleImportSuccess}
+          onNavigate={onNavigate}
+        />
+        <div className="p-6 flex-1">
+          <div className="mx-auto flex min-h-[calc(100vh-180px)] max-w-7xl items-center justify-center">
+            <div className="grid w-full gap-6 rounded-[32px] border border-teal-100 bg-gradient-to-br from-white via-teal-50/60 to-cyan-50 p-6 shadow-sm lg:grid-cols-[1.35fr_0.85fr] lg:p-8 xl:p-10">
+              <div className="flex flex-col justify-between gap-6">
+                <div className="space-y-4">
+                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-teal-200 bg-white/80 px-4 py-2 text-sm font-medium text-teal-700 shadow-sm">
+                    <Sparkles className="size-4" />
+                    {t("inventoryOnboardingBadge")}
+                  </div>
+                  <div className="space-y-2.5">
+                    <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-gray-950 lg:text-4xl">
+                      {t("inventoryOnboardingTitle")}
+                    </h1>
+                    <p className="max-w-3xl text-base leading-7 text-gray-600">
+                      {t("inventoryOnboardingDescription")}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      onClick={() => setImportDialogOpen(true)}
+                      className="h-11 rounded-full bg-teal-600 px-6 text-sm font-semibold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-600/30"
+                    >
+                      <Upload className="size-4" />
+                      {t("inventoryOnboardingPrimaryCta")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => onNavigate("manualUpdateStock")}
+                      className="h-11 rounded-full border-gray-300 bg-white px-6 text-sm font-semibold text-gray-700"
+                    >
+                      <FileEdit className="size-4" />
+                      {t("inventoryOnboardingSecondaryCta")}
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {[
+                    {
+                      icon: FileSpreadsheet,
+                      title: t("inventoryOnboardingStepOneTitle"),
+                      description: t("inventoryOnboardingStepOneDescription"),
+                    },
+                    {
+                      icon: Sparkles,
+                      title: t("inventoryOnboardingStepTwoTitle"),
+                      description: t("inventoryOnboardingStepTwoDescription"),
+                    },
+                    {
+                      icon: CheckCircle2,
+                      title: t("inventoryOnboardingStepThreeTitle"),
+                      description: t("inventoryOnboardingStepThreeDescription"),
+                    },
+                  ].map((step) => {
+                    const Icon = step.icon;
+
+                    return (
+                      <div
+                        key={step.title}
+                        className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur"
+                      >
+                        <div className="mb-3 flex size-10 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
+                          <Icon className="size-5" />
+                        </div>
+                        <h2 className="text-sm font-semibold text-gray-900">
+                          {step.title}
+                        </h2>
+                        <p className="mt-1 text-sm leading-6 text-gray-600">
+                          {step.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="rounded-[28px] border border-teal-100 bg-white/90 p-5 shadow-sm backdrop-blur">
+                <div className="rounded-[24px] bg-gradient-to-br from-teal-600 to-cyan-600 p-5 text-white">
+                  <p className="text-sm font-medium text-white/80">
+                    {t("inventoryOnboardingPreviewLabel")}
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold leading-tight">
+                    {t("inventoryOnboardingPreviewTitle")}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-white/85">
+                    {t("inventoryOnboardingPreviewDescription")}
+                  </p>
+                </div>
+                <div className="mt-4 space-y-2.5">
+                  {[
+                    t("inventoryOnboardingBenefitOne"),
+                    t("inventoryOnboardingBenefitTwo"),
+                  ].map((benefit) => (
+                    <div
+                      key={benefit}
+                      className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3"
+                    >
+                      <div className="mt-0.5 flex size-6 items-center justify-center rounded-full bg-teal-100 text-teal-700">
+                        <CheckCircle2 className="size-4" />
+                      </div>
+                      <p className="text-sm leading-6 text-gray-700">
+                        {benefit}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
       <CreateProductDialog
@@ -457,8 +685,102 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
       <ImportInventoryDialog
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
+        onImportSuccess={handleImportSuccess}
         onNavigate={onNavigate}
       />
+      <Dialog open={showRewardDialog} onOpenChange={setShowRewardDialog}>
+        <DialogContent className="reward-dialog-shell w-[calc(100vw-1.5rem)] max-w-[440px] overflow-hidden rounded-[22px] border-0 p-0 shadow-2xl">
+          <DialogHeader className="relative items-center bg-gradient-to-r from-[#ff7a59] to-[#f85d0a] px-4 pb-5 pt-5 text-center sm:px-5 sm:pb-6 sm:pt-6">
+            <div className="reward-confetti" aria-hidden="true">
+              {rewardConfettiPieces.map((piece, index) => (
+                <span
+                  key={`${piece.left}-${piece.delay}-${index}`}
+                  className="reward-confetti-piece"
+                  style={{
+                    ["--reward-left" as string]: piece.left,
+                    ["--reward-top" as string]: piece.top,
+                    ["--reward-size" as string]: piece.size,
+                    ["--reward-color" as string]: piece.color,
+                    ["--reward-x" as string]: piece.x,
+                    ["--reward-y" as string]: piece.y,
+                    ["--reward-rotate" as string]: piece.rotate,
+                    ["--reward-duration" as string]: piece.duration,
+                    ["--reward-delay" as string]: piece.delay,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="reward-badge-glow flex size-12 items-center justify-center rounded-full bg-white/15 text-white shadow-inner shadow-white/10 sm:size-14">
+              <Gift className="size-6 sm:size-7" strokeWidth={2.2} />
+            </div>
+            <DialogTitle className="mt-3 text-xl font-bold tracking-tight text-white sm:text-2xl">
+              {t("rewardTitle")}
+            </DialogTitle>
+            <DialogDescription className="mt-1 text-xs text-white/85 sm:text-sm">
+              {t("rewardReadySubtitle")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-[#f7f7f8] px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4">
+            <div className="rounded-[18px] bg-white px-3.5 py-4 text-center shadow-sm sm:px-4 sm:py-5">
+              <p className="text-3xl font-bold tracking-tight text-[#16a34a] sm:text-4xl">
+                JOD 3.5
+              </p>
+              <p className="mt-2.5 text-xs leading-5 text-slate-500 sm:text-sm">
+                {t("rewardReadyMessage")}
+              </p>
+
+              <div className="mt-4 text-start sm:mt-5">
+                <div className="mb-1.5 flex items-center justify-between gap-3 text-xs font-semibold text-slate-800 sm:text-sm">
+                  <span>{t("rewardProgressTitle")}</span>
+                  <span className="text-[#14b8a6]">JOD 10.5</span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-slate-200">
+                  <div className="h-full w-[30%] rounded-full bg-gradient-to-r from-[#ff8a4c] to-[#f85d0a]" />
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500 sm:text-sm">
+                  {t("rewardActionsNeeded")}
+                </p>
+              </div>
+
+              <div className="mt-4 text-start sm:mt-5">
+                <h3 className="text-base font-semibold text-slate-900 sm:text-lg">
+                  {t("rewardCompleteActions")}
+                </h3>
+                <div className="mt-2.5 space-y-2">
+                  {rewardActions.map((action) => {
+                    const Icon = action.icon;
+
+                    return (
+                      <div
+                        key={action.label}
+                        className="flex items-center gap-2.5 rounded-2xl bg-[#f5f5f6] px-2.5 py-2.5"
+                      >
+                        <div className="flex size-8 items-center justify-center rounded-full bg-[#fde7cf] text-[#f97316] sm:size-9">
+                          <Icon className="size-4" strokeWidth={2.2} />
+                        </div>
+                        <p className="flex-1 text-xs font-medium leading-5 text-slate-600 sm:text-sm">
+                          {action.label}
+                        </p>
+                        <div className="rounded-full bg-[#a8afba] px-2.5 py-1 text-xs font-semibold text-white sm:text-sm">
+                          {action.amount}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setShowRewardDialog(false)}
+                className="mt-4 h-11 w-full rounded-full bg-[#ff7a59] text-sm font-semibold text-white hover:bg-[#f56a47] sm:mt-5"
+              >
+                {t("rewardContinue")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <InventoryBatchActionDialog
         open={batchActionDialogOpen}
         onOpenChange={setBatchActionDialogOpen}

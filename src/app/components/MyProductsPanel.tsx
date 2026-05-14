@@ -5,6 +5,7 @@ import {
   ChevronUp,
   Filter,
   Loader2,
+  Package,
   Search,
 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -402,43 +403,33 @@ export function MyProductsPanel({
       </div>
 
       <div className="max-h-[60vh] overflow-y-auto bg-gray-50 px-6 py-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div className="grid grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_auto] gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+            <div>{t("product")}</div>
+            <div>{t("category")}</div>
+            <div>{t("currentStock")}</div>
+            <div>{t("sellingPrice")}</div>
+            <div>{t("warehouseLocation")}</div>
+            <div className="text-end">{t("status")}</div>
+          </div>
           {isSearchLoading
             ? Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
-                  className="animate-pulse rounded-2xl border border-gray-200 bg-white p-4"
+                  className="grid grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_auto] gap-3 border-b border-gray-100 px-4 py-3 animate-pulse"
                 >
-                  <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="h-3 w-20 rounded bg-gray-200" />
                       <div className="h-4 w-3/4 rounded bg-gray-200" />
-                      <div className="h-3 w-full rounded bg-gray-100" />
-                    </div>
-                    <div className="size-6 shrink-0 rounded-full bg-gray-200" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="space-y-2">
-                      <div className="h-3 w-14 rounded bg-gray-100" />
-                      <div className="h-3 w-full rounded bg-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 w-14 rounded bg-gray-100" />
-                      <div className="h-3 w-2/3 rounded bg-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 w-16 rounded bg-gray-100" />
-                      <div className="h-3 w-1/2 rounded bg-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 w-16 rounded bg-gray-100" />
-                      <div className="h-3 w-2/3 rounded bg-gray-200" />
+                      <div className="h-3 w-1/2 rounded bg-gray-100" />
                     </div>
                   </div>
-                  <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3">
-                    <div className="h-6 w-20 rounded-full bg-gray-100" />
-                    <div className="h-6 w-16 rounded-full bg-gray-100" />
-                  </div>
+                  <div className="h-4 w-20 self-center rounded bg-gray-100" />
+                  <div className="h-4 w-14 self-center rounded bg-gray-100" />
+                  <div className="h-4 w-14 self-center rounded bg-gray-100" />
+                  <div className="h-6 w-24 self-center rounded-full bg-gray-100" />
+                  <div className="h-6 w-16 self-center justify-self-end rounded-full bg-gray-100" />
                 </div>
               ))
             : filteredProducts.map((product) => {
@@ -452,91 +443,74 @@ export function MyProductsPanel({
                   selectedBatchIdsByCode[product.code] ?? [];
 
                 return (
-                  <button
+                  <div
                     key={product.code}
-                    type="button"
-                    onClick={() =>
-                      !isAlreadyAdded && toggleSelection(product.code)
-                    }
-                    className={`relative block w-full rounded-2xl border p-4 text-start transition-all ${
-                      isAlreadyAdded
-                        ? "border-amber-200 bg-amber-50/70"
-                        : isSelected
-                          ? "border-sky-500 bg-sky-50 shadow-sm"
-                          : "border-gray-200 bg-white hover:border-sky-300 hover:shadow-sm"
-                    }`}
+                    className="border-b border-gray-100 last:border-b-0"
                   >
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="mb-1 text-xs font-semibold text-sky-600">
-                          {product.code}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        !isAlreadyAdded && toggleSelection(product.code)
+                      }
+                      className={`relative grid w-full grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_auto] gap-3 px-4 py-3 text-start transition-all ${
+                        isAlreadyAdded
+                          ? "bg-amber-50/70"
+                          : isSelected
+                            ? "bg-sky-50"
+                            : "bg-white hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="size-11 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={
+                                language === "ar"
+                                  ? product.nameAr
+                                  : product.nameEn
+                              }
+                              className="size-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex size-full items-center justify-center bg-gray-50 text-gray-400">
+                              <Package className="size-4" />
+                            </div>
+                          )}
                         </div>
-                        <div className="line-clamp-2 text-sm font-semibold text-gray-900">
-                          {language === "ar" ? product.nameAr : product.nameEn}
-                        </div>
-                        <div className="mt-1 line-clamp-2 text-xs text-gray-500">
-                          {language === "ar"
-                            ? product.subtitleAr
-                            : product.subtitleEn}
-                        </div>
-                      </div>
-
-                      {!isAlreadyAdded && (
-                        <div
-                          className={`flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full border px-1 ${
-                            isSelected
-                              ? "border-sky-500 bg-sky-500 text-white"
-                              : "border-gray-300 bg-white text-transparent"
-                          }`}
-                        >
-                          <Check className="size-3.5" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <div className="text-gray-500">{t("barcode")}</div>
-                        <div className="font-medium text-gray-800">
-                          {product.barcode}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500">{t("category")}</div>
-                        <div className="font-medium text-gray-800">
-                          {t(product.categoryKey)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500">{t("currentStock")}</div>
-                        <div className="font-medium text-gray-800">
-                          {Number(product.stockQty).toLocaleString("en-GB")}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500">{t("sellingPrice")}</div>
-                        <div className="font-medium text-gray-800">
-                          {t("jod")} {product.sellPrice}
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-gray-900">
+                            {language === "ar"
+                              ? product.nameAr
+                              : product.nameEn}
+                          </div>
+                          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500">
+                            <span className="font-semibold text-sky-600">
+                              {product.code}
+                            </span>
+                            <span className="truncate">{product.barcode}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-100 pt-3 text-xs">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-100">
+                      <div className="self-center truncate text-xs text-gray-700">
+                        {t(product.categoryKey)}
+                      </div>
+                      <div className="self-center text-xs font-medium text-gray-800">
+                        {Number(product.stockQty).toLocaleString("en-GB")}
+                      </div>
+                      <div className="self-center text-xs font-medium text-gray-800">
+                        {t("jod")} {product.sellPrice}
+                      </div>
+                      <div className="flex min-w-0 flex-wrap items-center gap-1.5 self-center">
+                        <Badge className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-700 hover:bg-gray-100">
                           {product.warehouseZone}
                         </Badge>
-                        <Badge className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-100">
+                        <Badge className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-700 hover:bg-gray-100">
                           {product.lotBatch}
                         </Badge>
-                        {productWithBatches && (
-                          <Badge className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-700 hover:bg-sky-100">
-                            {productWithBatches.batches.length} {t("batches")}
-                          </Badge>
-                        )}
                       </div>
-
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end gap-2 self-center">
                         {productWithBatches &&
                           !isAlreadyAdded &&
                           isSelected && (
@@ -546,9 +520,14 @@ export function MyProductsPanel({
                                 e.stopPropagation();
                                 toggleExpanded(product.code);
                               }}
-                              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 font-medium text-gray-700 hover:bg-gray-50"
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                                isExpanded
+                                  ? "border-sky-200 bg-sky-100 text-sky-700"
+                                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                              }`}
+                              aria-expanded={isExpanded}
                             >
-                              {t("batches")}
+                              {isExpanded ? t("collapse") : t("viewBatches")}
                               {isExpanded ? (
                                 <ChevronUp className="size-3.5" />
                               ) : (
@@ -556,71 +535,88 @@ export function MyProductsPanel({
                               )}
                             </button>
                           )}
-
                         {isAlreadyAdded ? (
-                          <div className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">
+                          <div className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                             {t("alreadyAdded")}
                           </div>
                         ) : isSelected ? (
-                          <div className="inline-flex rounded-full bg-sky-100 px-2.5 py-1 font-medium text-sky-700">
-                            {selectedBatchIds.length > 0
-                              ? `${selectedBatchIds.length} ${t("batches")}`
-                              : t("selectedItems")}
+                          <div className="inline-flex rounded-full border border-sky-200 bg-white px-2 py-0.5 text-[10px] font-medium text-sky-700">
+                            {t("selectedItems")}
                           </div>
                         ) : null}
+                        {!isAlreadyAdded && (
+                          <div
+                            className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border px-1 ${
+                              isSelected
+                                ? "border-sky-500 bg-sky-500 text-white"
+                                : "border-gray-300 bg-white text-transparent"
+                            }`}
+                          >
+                            <Check className="size-3" />
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    </button>
 
                     {isExpanded && productWithBatches && (
                       <div
-                        className="mt-3 space-y-2 rounded-xl border border-sky-100 bg-white p-3"
+                        className="border-t border-sky-100 bg-sky-50/40 px-4 py-3"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-between gap-3 text-xs">
-                          <div className="font-semibold text-gray-900">
-                            {t("selectBatchesOptional")}
+                        <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-sky-100 bg-white/80 px-3 py-2 text-xs">
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {t("selectBatchesOptional")}
+                            </div>
+                            <div className="mt-0.5 text-gray-500">
+                              {t("leaveWithoutBatchesToCreateNew")}
+                            </div>
                           </div>
-                          <div className="text-gray-500">
-                            {t("leaveWithoutBatchesToCreateNew")}
+                          <div className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700">
+                            {productWithBatches.batches.length} {t("batches")}
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          {productWithBatches.batches.map((batch) => {
+                            const isBatchSelected = selectedBatchIds.includes(
+                              batch.id,
+                            );
 
-                        {productWithBatches.batches.map((batch) => {
-                          const isBatchSelected = selectedBatchIds.includes(
-                            batch.id,
-                          );
-
-                          return (
-                            <button
-                              key={batch.id}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleBatchSelection(product.code, batch.id);
-                              }}
-                              className={`w-full rounded-xl border px-3 py-2 text-start transition-all ${
-                                isBatchSelected
-                                  ? "border-sky-400 bg-sky-50"
-                                  : "border-gray-200 bg-white hover:border-sky-300"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-3">
+                            return (
+                              <button
+                                key={batch.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleBatchSelection(product.code, batch.id);
+                                }}
+                                className={`grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] gap-3 rounded-xl border px-3 py-2 text-start transition-all ${
+                                  isBatchSelected
+                                    ? "border-sky-400 bg-sky-50"
+                                    : "border-gray-200 bg-white hover:border-sky-300"
+                                }`}
+                              >
                                 <div className="min-w-0">
                                   <div className="text-xs font-semibold text-gray-900">
                                     {batch.batchNumber}
                                   </div>
-                                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
-                                    <span>
-                                      {t("expiry")}: {batch.expiry}
-                                    </span>
-                                    <span>
-                                      {t("warehouseLocation")}:{" "}
-                                      {batch.warehouseZone}
-                                    </span>
+                                  <div className="mt-0.5 truncate text-[11px] text-gray-500">
+                                    {t("expiry")}: {batch.expiry}
                                   </div>
                                 </div>
+                                <div className="self-center text-[11px] text-gray-700">
+                                  {batch.warehouseZone}
+                                </div>
+                                <div className="self-center text-[11px] text-gray-700">
+                                  {Number(batch.stockQty).toLocaleString(
+                                    "en-GB",
+                                  )}
+                                </div>
+                                <div className="self-center text-[11px] text-gray-700">
+                                  {t("jod")} {batch.sellPrice}
+                                </div>
                                 <div
-                                  className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border px-1 ${
+                                  className={`flex h-5 min-w-5 shrink-0 items-center justify-center justify-self-end rounded-full border px-1 ${
                                     isBatchSelected
                                       ? "border-sky-500 bg-sky-500 text-white"
                                       : "border-gray-300 bg-white text-transparent"
@@ -628,35 +624,13 @@ export function MyProductsPanel({
                                 >
                                   <Check className="size-3" />
                                 </div>
-                              </div>
-                              <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-gray-700">
-                                <div>
-                                  <span className="text-gray-500">
-                                    {t("stockQty")}:{" "}
-                                  </span>
-                                  {Number(batch.stockQty).toLocaleString(
-                                    "en-GB",
-                                  )}
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">
-                                    {t("cost")}:{" "}
-                                  </span>
-                                  {batch.avgCost}
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">
-                                    {t("sellingPrice")}:{" "}
-                                  </span>
-                                  {batch.sellPrice}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
         </div>

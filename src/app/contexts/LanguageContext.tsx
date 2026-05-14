@@ -78,6 +78,8 @@ const translations = {
     customProductWillBeAddedToTable:
       "This product will be added as a normal editable row in the manual stock table.",
     batches: "Batches",
+    viewBatches: "View batches",
+    collapse: "Collapse",
     expandBatches: "Expand batches",
     collapseBatches: "Collapse batches",
     productMasterAndBatches: "Product Master & Batches",
@@ -395,13 +397,54 @@ const translations = {
     clearExistingStock:
       "Clear all existing stock for products in this file before adding new stock",
     setStockToZero: "Set existing stock to zero before upload",
-    downloadSample: "Download Sample",
-    getTemplate: "Get a template to fill in",
+    downloadSample: "Download Template",
+    getTemplate:
+      "Download the current inventory format with matching sample rows",
     addManually: "Add Manually",
     enterOneByOne: "Enter products one by one",
     viewTour: "View Tour",
     uploadProcess: "Upload & Process",
+    processingImport: "Processing inventory...",
     generate: "Generate",
+    rewardTitle: "Congratulations!",
+    rewardSubtitle: "You've earned a reward",
+    rewardReadySubtitle: "Your inventory is ready to use in Pulse!",
+    rewardWalletMessage:
+      "Added JOD 3.5 to your wallet for Upload Your Inventory",
+    rewardReadyMessage:
+      "Your inventory dashboard is now filled and ready. We also added JOD 3.5 to your wallet for uploading your inventory.",
+    rewardProgressTitle: "Progress to JOD 35 Reward",
+    rewardActionsNeeded: "4 more actions needed",
+    rewardCompleteActions: "Complete these actions:",
+    rewardActionPosTransactions: "Make 5 POS Transactions",
+    rewardActionStartSelling: "Start Selling on P2P",
+    rewardActionBuyConfirm: "Buy & Confirm P2P Order",
+    rewardActionConfirmMarketplace:
+      "Confirm Marketplace Order as Purchased Automatically",
+    rewardContinue: "Continue",
+    inventoryOnboardingBadge: "Inventory setup",
+    inventoryOnboardingTitle: "Import your inventory to get started",
+    inventoryOnboardingDescription:
+      "Import your file once to bring in products, stock, and batches.",
+    inventoryOnboardingPrimaryCta: "Import your inventory",
+    inventoryOnboardingSecondaryCta: "Add manually instead",
+    inventoryOnboardingStepOneTitle: "Upload your file",
+    inventoryOnboardingStepOneDescription:
+      "Use your Excel or CSV inventory sheet.",
+    inventoryOnboardingStepTwoTitle: "Review smart matching",
+    inventoryOnboardingStepTwoDescription:
+      "Review matches and missing details before import.",
+    inventoryOnboardingStepThreeTitle: "Open your inventory",
+    inventoryOnboardingStepThreeDescription:
+      "Open the inventory page with your data ready.",
+    inventoryOnboardingPreviewLabel: "What happens next",
+    inventoryOnboardingPreviewTitle:
+      "Your inventory dashboard appears after import",
+    inventoryOnboardingPreviewDescription:
+      "This page switches to your full inventory view as soon as the import finishes.",
+    inventoryOnboardingBenefitOne:
+      "Bring products, quantities, and batches into one list.",
+    inventoryOnboardingBenefitTwo: "Reduce manual setup with smart matching.",
 
     // Filters
     categoryFilter: "Category",
@@ -526,6 +569,8 @@ const translations = {
     customProductWillBeAddedToTable:
       "سيتم إضافة هذا المنتج كصف طبيعي قابل للتعديل داخل جدول التحديث اليدوي.",
     batches: "الدفعات",
+    viewBatches: "عرض الدفعات",
+    collapse: "طي",
     expandBatches: "توسيع الدفعات",
     collapseBatches: "طي الدفعات",
     productMasterAndBatches: "بيانات المنتج والدفعات",
@@ -842,13 +887,50 @@ const translations = {
     clearExistingStock:
       "مسح جميع المخزون الموجود للمنتجات في هذا الملف قبل إضافة مخزون جديد",
     setStockToZero: "تعيين المخزون الموجود إلى الصفر قبل الرفع",
-    downloadSample: "تنزيل نموذج",
-    getTemplate: "احصل على قالب للتعبئة",
+    downloadSample: "تنزيل القالب",
+    getTemplate: "نزّل تنسيق المخزون الحالي مع صفوف مطابقة كنموذج",
     addManually: "إضافة يدوياً",
     enterOneByOne: "إدخال المنتجات واحداً تلو الآخر",
     viewTour: "عرض الجولة",
     uploadProcess: "رفع ومعالجة",
+    processingImport: "جارٍ معالجة المخزون...",
     generate: "توليد",
+    rewardTitle: "تهانينا!",
+    rewardSubtitle: "لقد حصلت على مكافأة",
+    rewardReadySubtitle: "أصبح مخزونك جاهزاً للاستخدام في Pulse!",
+    rewardWalletMessage: "تمت إضافة 3.5 دينار إلى محفظتك مقابل رفع المخزون",
+    rewardReadyMessage:
+      "أصبحت لوحة المخزون لديك ممتلئة وجاهزة للاستخدام. كما تمت إضافة 3.5 دينار إلى محفظتك مقابل رفع المخزون.",
+    rewardProgressTitle: "التقدم نحو مكافأة 35 دينار",
+    rewardActionsNeeded: "تحتاج إلى 4 إجراءات إضافية",
+    rewardCompleteActions: "أكمل هذه الإجراءات:",
+    rewardActionPosTransactions: "نفّذ 5 عمليات بيع POS",
+    rewardActionStartSelling: "ابدأ البيع على P2P",
+    rewardActionBuyConfirm: "اشترِ وأكّد طلب P2P",
+    rewardActionConfirmMarketplace: "أكّد طلب السوق كمشتَرى تلقائياً",
+    rewardContinue: "متابعة",
+    inventoryOnboardingBadge: "إعداد المخزون",
+    inventoryOnboardingTitle: "ابدأ باستيراد مخزونك",
+    inventoryOnboardingDescription:
+      "استورد الملف مرة واحدة لإضافة المنتجات والكميات والدفعات.",
+    inventoryOnboardingPrimaryCta: "استيراد المخزون",
+    inventoryOnboardingSecondaryCta: "الإضافة اليدوية بدلاً من ذلك",
+    inventoryOnboardingStepOneTitle: "ارفع الملف",
+    inventoryOnboardingStepOneDescription:
+      "استخدم ملف Excel أو CSV الخاص بالمخزون.",
+    inventoryOnboardingStepTwoTitle: "راجع المطابقة الذكية",
+    inventoryOnboardingStepTwoDescription:
+      "راجع المطابقات والتفاصيل الناقصة قبل الاستيراد.",
+    inventoryOnboardingStepThreeTitle: "افتح صفحة المخزون",
+    inventoryOnboardingStepThreeDescription:
+      "افتح صفحة المخزون مع البيانات جاهزة.",
+    inventoryOnboardingPreviewLabel: "ماذا سيحدث بعد ذلك",
+    inventoryOnboardingPreviewTitle: "ستظهر لوحة المخزون بعد الاستيراد",
+    inventoryOnboardingPreviewDescription:
+      "ستتحول هذه الصفحة مباشرة إلى عرض المخزون الكامل بعد انتهاء الاستيراد.",
+    inventoryOnboardingBenefitOne:
+      "اجمع المنتجات والكميات والدفعات في قائمة واحدة.",
+    inventoryOnboardingBenefitTwo: "قلل الإعداد اليدوي عبر المطابقة الذكية.",
 
     // Filters
     categoryFilter: "الفئة",
