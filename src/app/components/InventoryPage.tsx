@@ -501,6 +501,7 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
           open={importDialogOpen}
           onOpenChange={setImportDialogOpen}
           onImportSuccess={handleImportSuccess}
+          variant="onboarding"
           onNavigate={onNavigate}
         />
         <div className="p-6 flex-1">
