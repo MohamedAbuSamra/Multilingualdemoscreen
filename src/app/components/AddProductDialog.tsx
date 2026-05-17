@@ -27,6 +27,7 @@ interface AddProductDialogProps {
   onOpenChange: (open: boolean) => void;
   activeSource: AddProductSource;
   onActiveSourceChange: (source: AddProductSource) => void;
+  availableSources?: AddProductSource[];
   selectedCodes: string[];
   onAddCoreProducts: (products: AumetCoreProduct[]) => void;
   onAddInventoryProducts: (
@@ -40,6 +41,7 @@ export function AddProductDialog({
   onOpenChange,
   activeSource,
   onActiveSourceChange,
+  availableSources = ["core", "inventory", "custom"],
   selectedCodes,
   onAddCoreProducts,
   onAddInventoryProducts,
@@ -96,6 +98,10 @@ export function AddProductDialog({
       iconClassName: "bg-violet-100 text-violet-700",
     },
   ];
+  const visibleSourceOptions = sourceOptions.filter((option) =>
+    availableSources.includes(option.key),
+  );
+  const defaultSource = visibleSourceOptions[0]?.key ?? "core";
 
   useEffect(() => {
     if (!open) {
@@ -104,14 +110,14 @@ export function AddProductDialog({
     }
 
     setIsOpeningLoading(true);
-    onActiveSourceChange("inventory");
+    onActiveSourceChange(defaultSource);
 
     const timer = window.setTimeout(() => {
       setIsOpeningLoading(false);
     }, 1500);
 
     return () => window.clearTimeout(timer);
-  }, [onActiveSourceChange, open]);
+  }, [defaultSource, onActiveSourceChange, open]);
 
   const handleAddSelected = () => {
     if (selectedCoreProducts.length > 0) {
@@ -150,7 +156,7 @@ export function AddProductDialog({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mt-4">
-            {sourceOptions.map((option) => {
+            {visibleSourceOptions.map((option) => {
               const Icon = option.icon;
               const isActive = activeSource === option.key;
 

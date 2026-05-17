@@ -457,51 +457,7 @@ export function ImportInventoryDialog({
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-teal-300 transition-all">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="size-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                        <CheckCircle2 className="size-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          {t("matchAumetProducts")}
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={useAumetReference}
-                      onCheckedChange={setUseAumetReference}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    {t("autoFillProductDetails")}
-                  </p>
-                </div>
-
-                <div className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-teal-300 transition-all">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="size-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <FileSpreadsheet className="size-4 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          {t("autoCreateBarcodes")}
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={autoGenerateBarcode}
-                      onCheckedChange={setAutoGenerateBarcode}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    {t("generateBarcodesForProducts")}
-                  </p>
-                </div>
-
+              <div className="grid grid-cols-1 gap-4">
                 <div className="bg-white border-2 border-orange-200 rounded-xl p-4 hover:border-orange-300 transition-all">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">

@@ -276,6 +276,7 @@ function buildCustomStockItem(product: ManualCustomProductInput): StockItem {
 
 export function ManualUpdateStockPage({
   onNavigate,
+  entryPoint = "default",
 }: {
   onNavigate?: (
     page:
@@ -283,10 +284,19 @@ export function ManualUpdateStockPage({
       | "updateStock"
       | "manualUpdateStock"
       | "stockHistoryDetails",
+    options?: {
+      manualUpdateEntryPoint?: "default" | "onboarding";
+    },
   ) => void;
+  entryPoint?: "default" | "onboarding";
 }) {
   const { t, language } = useLanguage();
   const isRTL = language === "ar";
+  const showResetExistingStockOption = entryPoint !== "onboarding";
+  const availableAddProductSources: AddProductSource[] =
+    entryPoint === "onboarding"
+      ? ["core", "custom"]
+      : ["core", "inventory", "custom"];
   const largestUnitLabel = language === "ar" ? "أكبر وحدة" : "Largest Unit";
   const smallestUnitLabel = language === "ar" ? "أصغر وحدة" : "Smallest Unit";
   const conversionCountLabel =
@@ -366,8 +376,6 @@ export function ManualUpdateStockPage({
   >({});
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
 
-  const [useAumetReference, setUseAumetReference] = useState(true);
-  const [autoGenerateBarcode, setAutoGenerateBarcode] = useState(true);
   const [resetExistingStock, setResetExistingStock] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -991,6 +999,7 @@ export function ManualUpdateStockPage({
         onOpenChange={setAddProductDialogOpen}
         activeSource={activeSource}
         onActiveSourceChange={setActiveSource}
+        availableSources={availableAddProductSources}
         selectedCodes={stockItems.map((item) => item.productCode)}
         onAddCoreProducts={addCoreProductsToTable}
         onAddInventoryProducts={addInventoryProductsToTable}
@@ -1062,87 +1071,45 @@ export function ManualUpdateStockPage({
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-2xl p-3">
-          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-            <div className="size-5 bg-teal-600 rounded-full flex items-center justify-center">
-              <Sparkles className="size-3 text-white" />
-            </div>
-            <h3 className="text-sm font-bold text-gray-900">
-              {t("manualStockOptions")}
-            </h3>
-            <span className="text-[11px] text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full font-semibold">
-              {t("configureBeforeManualUpdate")}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 hover:border-teal-300 transition-all">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-2 min-w-0">
-                  <div className="size-7 bg-teal-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="size-3.5 text-teal-600" />
-                  </div>
-                  <div className={isRTL ? "text-right" : "text-left"}>
-                    <p className="text-xs font-bold text-gray-900 leading-5">
-                      {t("matchAumetProducts")}
-                    </p>
-                    <p className="text-[11px] text-gray-600 leading-4 mt-0.5">
-                      {t("autoFillProductDetails")}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={useAumetReference}
-                  onCheckedChange={setUseAumetReference}
-                />
+        {showResetExistingStockOption && (
+          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-2xl p-3">
+            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+              <div className="size-5 bg-teal-600 rounded-full flex items-center justify-center">
+                <Sparkles className="size-3 text-white" />
               </div>
+              <h3 className="text-sm font-bold text-gray-900">
+                {t("manualStockOptions")}
+              </h3>
+              <span className="text-[11px] text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full font-semibold">
+                {t("configureBeforeManualUpdate")}
+              </span>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 hover:border-teal-300 transition-all">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-2 min-w-0">
-                  <div className="size-7 bg-purple-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <FileSpreadsheet className="size-3.5 text-purple-600" />
+            <div className="grid grid-cols-1 gap-2">
+              <div className="bg-white border border-orange-200 rounded-xl px-3 py-2 hover:border-orange-300 transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <div className="size-7 bg-orange-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                      <AlertTriangle className="size-3.5 text-orange-600" />
+                    </div>
+                    <div className={isRTL ? "text-right" : "text-left"}>
+                      <p className="text-xs font-bold text-gray-900 leading-5">
+                        {t("resetOldStock")}
+                      </p>
+                      <p className="text-[11px] text-gray-600 leading-4 mt-0.5">
+                        {t("setStockToZero")}
+                      </p>
+                    </div>
                   </div>
-                  <div className={isRTL ? "text-right" : "text-left"}>
-                    <p className="text-xs font-bold text-gray-900 leading-5">
-                      {t("autoCreateBarcodes")}
-                    </p>
-                    <p className="text-[11px] text-gray-600 leading-4 mt-0.5">
-                      {t("generateBarcodesForProducts")}
-                    </p>
-                  </div>
+                  <Switch
+                    checked={resetExistingStock}
+                    onCheckedChange={setResetExistingStock}
+                  />
                 </div>
-                <Switch
-                  checked={autoGenerateBarcode}
-                  onCheckedChange={setAutoGenerateBarcode}
-                />
-              </div>
-            </div>
-
-            <div className="bg-white border border-orange-200 rounded-xl px-3 py-2 hover:border-orange-300 transition-all">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-2 min-w-0">
-                  <div className="size-7 bg-orange-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <AlertTriangle className="size-3.5 text-orange-600" />
-                  </div>
-                  <div className={isRTL ? "text-right" : "text-left"}>
-                    <p className="text-xs font-bold text-gray-900 leading-5">
-                      {t("resetOldStock")}
-                    </p>
-                    <p className="text-[11px] text-gray-600 leading-4 mt-0.5">
-                      {t("setStockToZero")}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={resetExistingStock}
-                  onCheckedChange={setResetExistingStock}
-                />
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="-mx-6 sm:mx-0 bg-white border border-gray-200 rounded-none sm:rounded-2xl overflow-visible">
           {stockItems.length > 0 && (
@@ -1884,13 +1851,15 @@ export function ManualUpdateStockPage({
                   >
                     {t("cancel")}
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleSaveDraft}
-                    className="h-10 px-4 rounded-full border-gray-300 text-gray-700"
-                  >
-                    {t("saveAsDraft")}
-                  </Button>
+                  {entryPoint !== "onboarding" && (
+                    <Button
+                      variant="outline"
+                      onClick={handleSaveDraft}
+                      className="h-10 px-4 rounded-full border-gray-300 text-gray-700"
+                    >
+                      {t("saveAsDraft")}
+                    </Button>
+                  )}
                   <Button
                     onClick={handleUpdateStock}
                     className="bg-teal-500 hover:bg-teal-600 h-10 px-5 text-white rounded-full gap-2"
@@ -1926,19 +1895,20 @@ export function ManualUpdateStockPage({
                         <Plus className="size-4" />
                         {t("addProduct")}
                       </Button>
-                      {hasExistingInventoryProducts && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleUseExistingInventoryProducts}
-                          className="h-11 rounded-full border-teal-200 bg-white px-5 text-sm font-medium text-teal-700 hover:bg-teal-50 hover:text-teal-800"
-                        >
-                          <Boxes className="size-4" />
-                          {language === "ar"
-                            ? "استخدم منتجاتي الحالية"
-                            : "Use my existing products"}
-                        </Button>
-                      )}
+                      {showResetExistingStockOption &&
+                        hasExistingInventoryProducts && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleUseExistingInventoryProducts}
+                            className="h-11 rounded-full border-teal-200 bg-white px-5 text-sm font-medium text-teal-700 hover:bg-teal-50 hover:text-teal-800"
+                          >
+                            <Boxes className="size-4" />
+                            {language === "ar"
+                              ? "استخدم منتجاتي الحالية"
+                              : "Use my existing products"}
+                          </Button>
+                        )}
                     </div>
                   </div>
 

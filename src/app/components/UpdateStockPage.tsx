@@ -170,6 +170,9 @@ export function UpdateStockPage({
       | "updateStock"
       | "manualUpdateStock"
       | "stockHistoryDetails",
+    options?: {
+      manualUpdateEntryPoint?: "default" | "onboarding";
+    },
   ) => void;
 }) {
   const { t, language } = useLanguage();

@@ -30,28 +30,53 @@ function AppContent() {
     | "fullProductCreation"
     | "viewProduct"
   >("products");
+  const [manualUpdateEntryPoint, setManualUpdateEntryPoint] = useState<
+    "default" | "onboarding"
+  >("default");
   const { language } = useLanguage();
   const isRTL = language === "ar";
+
+  const handleNavigate = (
+    page:
+      | "products"
+      | "updateStock"
+      | "manualUpdateStock"
+      | "stockHistoryDetails"
+      | "fullProductCreation"
+      | "viewProduct",
+    options?: {
+      manualUpdateEntryPoint?: "default" | "onboarding";
+    },
+  ) => {
+    if (page === "manualUpdateStock") {
+      setManualUpdateEntryPoint(options?.manualUpdateEntryPoint ?? "default");
+    }
+
+    setCurrentPage(page);
+  };
 
   return (
     <div
       className="h-screen flex flex-col bg-gray-50 overflow-hidden"
       dir={isRTL ? "rtl" : "ltr"}
     >
-      <Navbar onNavigate={setCurrentPage} currentPage={currentPage} />
+      <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
       <div className="flex-1 overflow-y-auto">
         {currentPage === "products" ? (
-          <InventoryPage onNavigate={setCurrentPage} />
+          <InventoryPage onNavigate={handleNavigate} />
         ) : currentPage === "updateStock" ? (
-          <UpdateStockPage onNavigate={setCurrentPage} />
+          <UpdateStockPage onNavigate={handleNavigate} />
         ) : currentPage === "manualUpdateStock" ? (
-          <ManualUpdateStockPage onNavigate={setCurrentPage} />
+          <ManualUpdateStockPage
+            onNavigate={handleNavigate}
+            entryPoint={manualUpdateEntryPoint}
+          />
         ) : currentPage === "stockHistoryDetails" ? (
-          <StockHistoryDetailsPage onNavigate={setCurrentPage} />
+          <StockHistoryDetailsPage onNavigate={handleNavigate} />
         ) : currentPage === "fullProductCreation" ? (
-          <FullProductCreationPage onNavigate={setCurrentPage} />
+          <FullProductCreationPage onNavigate={handleNavigate} />
         ) : (
-          <ViewProductPage onNavigate={setCurrentPage} />
+          <ViewProductPage onNavigate={handleNavigate} />
         )}
       </div>
     </div>

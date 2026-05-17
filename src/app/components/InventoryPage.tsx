@@ -78,6 +78,9 @@ interface InventoryPageProps {
       | "stockHistoryDetails"
       | "fullProductCreation"
       | "viewProduct",
+    options?: {
+      manualUpdateEntryPoint?: "default" | "onboarding";
+    },
   ) => void;
 }
 
@@ -531,7 +534,11 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => onNavigate("manualUpdateStock")}
+                      onClick={() =>
+                        onNavigate("manualUpdateStock", {
+                          manualUpdateEntryPoint: "onboarding",
+                        })
+                      }
                       className="h-11 rounded-full border-gray-300 bg-white px-6 text-sm font-semibold text-gray-700"
                     >
                       <FileEdit className="size-4" />
