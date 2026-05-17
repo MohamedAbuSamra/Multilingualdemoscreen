@@ -896,16 +896,16 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
         mode={batchActionMode}
         target={batchActionTarget}
       />
-      <div className="p-6 space-y-4 flex-1">
-        <div className="px-1 py-1">
-          <div className="flex items-start justify-between gap-4">
+      <div className="p-6 space-y-3 flex-1">
+        <div className="px-1 py-0.5">
+          <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <h1 className="text-xl font-semibold tracking-tight text-gray-900">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                <h1 className="text-lg font-semibold tracking-tight text-gray-900">
                   {t("inventory")}
                 </h1>
-                <span className="text-sm text-gray-300">•</span>
-                <p className="text-sm text-gray-500">
+                <span className="text-xs text-gray-300">•</span>
+                <p className="text-xs text-gray-500">
                   Monitor inventory performance and manage stock in one place.
                 </p>
               </div>
@@ -913,10 +913,10 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 text-[13px] font-medium text-gray-700 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2">
-                  <Sparkles className="size-3.5 text-teal-600" />
+                <button className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2">
+                  <Sparkles className="size-3 text-teal-600" />
                   {language === "ar" ? "الإجراءات السريعة" : "Quick Actions"}
-                  <ChevronDown className="size-3.5" />
+                  <ChevronDown className="size-3" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -1233,6 +1233,8 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                   {quickFilterCards.map((item) => {
                     const isActive = activeQuickFilter === item.key;
                     const isPending = pendingQuickFilter === item.key;
+                    const shouldShowReviewButton =
+                      item.showAction && item.value > 0;
 
                     return (
                       <button
@@ -1250,75 +1252,48 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                             : "cursor-pointer"
                         }`}
                       >
-                        <div className="flex min-h-[98px] flex-col justify-between p-3.5">
+                        <div className="flex min-h-[90px] flex-col justify-between p-3.5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="text-[13px] font-semibold text-current">
+                              <div className="text-[12px] font-semibold text-current">
                                 {item.label}
                               </div>
                               <p
-                                className={`mt-1 max-w-[20ch] text-[11px] leading-4 ${item.helperClass}`}
+                                className={`mt-1.5 max-w-[22ch] text-[10px] leading-4 ${item.helperClass}`}
                               >
                                 {item.helper}
                               </p>
                             </div>
 
                             <div
-                              className={`shrink-0 text-[18px] font-semibold leading-none sm:text-[22px] ${item.valueClass}`}
+                              className={`shrink-0 text-[18px] font-semibold leading-none sm:text-[21px] ${item.valueClass}`}
                             >
-                              <div className="flex items-center gap-2">
-                                {isPending && (
-                                  <span className="size-2 rounded-full bg-teal-500 animate-pulse" />
-                                )}
-                                <span>{item.value}</span>
+                              <div className="flex flex-col items-end gap-2">
+                                <div className="flex items-center gap-2">
+                                  {isPending && (
+                                    <span className="size-2 rounded-full bg-teal-500 animate-pulse" />
+                                  )}
+                                  <span>{item.value}</span>
+                                </div>
+                                {shouldShowReviewButton ? (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      handleQuickFilterChange(item.key);
+                                    }}
+                                    disabled={isTableLoading}
+                                    className={`inline-flex min-h-6 items-center justify-center rounded-full border px-3 py-1 text-[10px] font-semibold leading-none transition-colors ${
+                                      isActive
+                                        ? "border-teal-200 bg-white text-teal-700"
+                                        : "border-teal-400 bg-white text-teal-600 hover:bg-teal-50"
+                                    } ${isTableLoading ? "cursor-wait" : ""}`}
+                                  >
+                                    {item.actionLabel}
+                                  </button>
+                                ) : null}
                               </div>
                             </div>
-                          </div>
-
-                          <div className="mt-2.5 flex items-center justify-between gap-2">
-                            <div className="text-[9px] font-medium text-current/55">
-                              {isPending
-                                ? language === "ar"
-                                  ? "جاري تحميل النتائج"
-                                  : "Loading results"
-                                : isActive
-                                  ? language === "ar"
-                                    ? "يعرض النتائج الآن"
-                                    : "Showing results"
-                                  : language === "ar"
-                                    ? "اضغط لتصفية الجدول"
-                                    : "Click to filter table"}
-                            </div>
-
-                            {item.showAction ? (
-                              <span
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleQuickFilterChange(item.key);
-                                }}
-                                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
-                                  isActive
-                                    ? "border-teal-200 bg-white text-teal-700"
-                                    : "border-teal-400 bg-white text-teal-600"
-                                }`}
-                              >
-                                {item.actionLabel}
-                              </span>
-                            ) : (
-                              <span
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleQuickFilterChange(item.key);
-                                }}
-                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-medium ${
-                                  isActive
-                                    ? item.actionClass
-                                    : "border-current/15 bg-white text-current"
-                                }`}
-                              >
-                                {item.actionLabel}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </button>
