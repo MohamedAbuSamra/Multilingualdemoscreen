@@ -1,6 +1,7 @@
 export type ProductStatusKey =
   | "productStatusExpiringSoon"
-  | "productStatusActive"
+  | "productStatusExpired"
+  | "productStatusLowStock"
   | "productStatusOutOfStock"
   | "";
 
@@ -14,7 +15,7 @@ export type ProductCategoryKey =
   | "categoryDermatology"
   | "categoryAnalgesic";
 
-export type StatusColor = "red" | "yellow" | "green" | "";
+export type StatusColor = "red" | "yellow" | "orange" | "";
 
 export interface InventoryBatch {
   id: string;

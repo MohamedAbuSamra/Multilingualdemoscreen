@@ -476,12 +476,13 @@ const translations = {
 
     // Inventory — line statuses
     productStatusExpiringSoon: "Expiring Soon",
-    productStatusActive: "Active",
+    productStatusExpired: "Expired",
+    productStatusLowStock: "Low Stock",
     productStatusOutOfStock: "Out of Stock",
 
-    // Inventory — table footer (8 demo products)
-    inventoryTablePaginationSummary: "Showing 1 to 8 of 8 results",
-    inventoryTableAllOnPage: "All 8 results on this page",
+    // Inventory — table footer (10 demo products)
+    inventoryTablePaginationSummary: "Showing 1 to 10 of 10 results",
+    inventoryTableAllOnPage: "All 10 results on this page",
 
     // Update Stock page (stats, adjustments table, footer)
     statTotalAdjustments: "Total Adjustments",
@@ -962,12 +963,13 @@ const translations = {
 
     // Inventory — line statuses
     productStatusExpiringSoon: "تنتهي قريباً",
-    productStatusActive: "نشط",
+    productStatusExpired: "منتهي الصلاحية",
+    productStatusLowStock: "مخزون منخفض",
     productStatusOutOfStock: "نفد المخزون",
 
-    // Inventory — table footer (8 demo products)
-    inventoryTablePaginationSummary: "عرض 1 إلى 8 من 8 نتائج",
-    inventoryTableAllOnPage: "جميع الـ 8 نتائج في هذه الصفحة",
+    // Inventory — table footer (10 demo products)
+    inventoryTablePaginationSummary: "عرض 1 إلى 10 من 10 نتائج",
+    inventoryTableAllOnPage: "جميع الـ 10 نتائج في هذه الصفحة",
 
     // Update Stock page (stats, adjustments table, footer)
     statTotalAdjustments: "إجمالي التعديلات",

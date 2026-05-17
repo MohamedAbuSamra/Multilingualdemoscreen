@@ -49,7 +49,9 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import {
@@ -86,6 +88,101 @@ interface InventoryPageProps {
 
 type InventoryQuickFilter = "all" | "stagnant" | "expiringSoon" | "lowStock";
 type CreateEntityType = "brand" | "category" | "manufacturer";
+type DerivedInventoryStatus = {
+  statusKey:
+    | "productStatusExpiringSoon"
+    | "productStatusExpired"
+    | "productStatusLowStock"
+    | "productStatusOutOfStock"
+    | "";
+  statusColor: "red" | "yellow" | "orange" | "";
+  nearestExpiry: string;
+  totalStockQty: number;
+};
+
+const LOW_STOCK_THRESHOLD = 30;
+const EXPIRING_SOON_MONTHS = 3;
+
+const parseExpiryMonth = (expiry: string) => {
+  const [year, month] = expiry.split("-").map(Number);
+
+  if (!year || !month) {
+    return null;
+  }
+
+  return new Date(year, month - 1, 1);
+};
+
+const getDerivedInventoryStatus = (
+  product: (typeof PHARMACY_INVENTORY_PRODUCTS_V2)[number],
+): DerivedInventoryStatus => {
+  const totalStockQty = product.batches.reduce(
+    (sum, batch) => sum + (Number(batch.stockQty) || 0),
+    0,
+  );
+  const expiryDates = product.batches
+    .map((batch) => ({
+      raw: batch.expiry,
+      date: parseExpiryMonth(batch.expiry),
+    }))
+    .filter(
+      (batch): batch is { raw: string; date: Date } =>
+        batch.date instanceof Date,
+    )
+    .sort((left, right) => left.date.getTime() - right.date.getTime());
+
+  const nearestExpiry = expiryDates[0]?.raw ?? product.batches[0]?.expiry ?? "";
+  const nearestExpiryDate = expiryDates[0]?.date ?? null;
+  const currentMonth = new Date(2026, 4, 1);
+  const expiringSoonCutoff = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + EXPIRING_SOON_MONTHS,
+    1,
+  );
+
+  if (totalStockQty <= 0) {
+    return {
+      statusKey: "productStatusOutOfStock",
+      statusColor: "red",
+      nearestExpiry,
+      totalStockQty,
+    };
+  }
+
+  if (nearestExpiryDate && nearestExpiryDate < currentMonth) {
+    return {
+      statusKey: "productStatusExpired",
+      statusColor: "red",
+      nearestExpiry,
+      totalStockQty,
+    };
+  }
+
+  if (nearestExpiryDate && nearestExpiryDate <= expiringSoonCutoff) {
+    return {
+      statusKey: "productStatusExpiringSoon",
+      statusColor: "yellow",
+      nearestExpiry,
+      totalStockQty,
+    };
+  }
+
+  if (totalStockQty <= LOW_STOCK_THRESHOLD) {
+    return {
+      statusKey: "productStatusLowStock",
+      statusColor: "orange",
+      nearestExpiry,
+      totalStockQty,
+    };
+  }
+
+  return {
+    statusKey: "",
+    statusColor: "",
+    nearestExpiry,
+    totalStockQty,
+  };
+};
 
 const CREATE_ENTITY_COPY: Record<
   CreateEntityType,
@@ -211,10 +308,7 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
   const products = useMemo(
     () =>
       PHARMACY_INVENTORY_PRODUCTS_V2.map((product) => {
-        const totalStockQty = product.batches.reduce(
-          (sum, batch) => sum + (Number(batch.stockQty) || 0),
-          0,
-        );
+        const derivedStatus = getDerivedInventoryStatus(product);
         const firstBatch = product.batches[0];
 
         return {
@@ -227,17 +321,18 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
           barcode: product.barcode,
           category: t(product.categoryKey),
           lotBatch: firstBatch?.batchNumber ?? "",
-          expiry: firstBatch?.expiry ?? "",
+          expiry: derivedStatus.nearestExpiry,
           lastSale: `${t("jod")} ${product.lastSaleAmount}`,
-          stockQty: totalStockQty.toLocaleString("en-GB"),
+          stockQty: derivedStatus.totalStockQty.toLocaleString("en-GB"),
           avgCost: firstBatch?.avgCost ?? "",
           sellPrice: firstBatch?.sellPrice ?? "",
           tax: product.tax,
           warehouse: firstBatch
             ? `${t("main")} · ${firstBatch.warehouseZone}`
             : "",
-          status: product.statusKey ? t(product.statusKey) : "",
-          statusColor: product.statusColor,
+          status: derivedStatus.statusKey ? t(derivedStatus.statusKey) : "",
+          statusColor: derivedStatus.statusColor,
+          statusKey: derivedStatus.statusKey,
           batchCount: product.batches.length,
           batches: product.batches,
         };
@@ -246,18 +341,20 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
   );
 
   const inventorySummary = useMemo(() => {
-    const stagnantProducts = PHARMACY_INVENTORY_PRODUCTS_V2.filter(
-      (product) => Number(product.lastSaleAmount) <= 8,
+    const derivedProducts = PHARMACY_INVENTORY_PRODUCTS_V2.map((product) => ({
+      product,
+      derivedStatus: getDerivedInventoryStatus(product),
+    }));
+    const stagnantProducts = derivedProducts.filter(
+      ({ product }) => Number(product.lastSaleAmount) <= 8,
     ).length;
-    const expiringSoonProducts = PHARMACY_INVENTORY_PRODUCTS_V2.filter(
-      (product) => product.statusKey === "productStatusExpiringSoon",
+    const expiringSoonProducts = derivedProducts.filter(
+      ({ derivedStatus }) =>
+        derivedStatus.statusKey === "productStatusExpiringSoon",
     ).length;
-    const lowStockProducts = PHARMACY_INVENTORY_PRODUCTS_V2.filter(
-      (product) =>
-        product.batches.reduce(
-          (sum, batch) => sum + (Number(batch.stockQty) || 0),
-          0,
-        ) <= 30,
+    const lowStockProducts = derivedProducts.filter(
+      ({ derivedStatus }) =>
+        derivedStatus.statusKey === "productStatusLowStock",
     ).length;
 
     return {
@@ -273,9 +370,13 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
       case "stagnant":
         return products.filter((product) => Number(product.sellPrice) <= 8);
       case "expiringSoon":
-        return products.filter((product) => product.statusColor === "red");
+        return products.filter(
+          (product) => product.statusKey === "productStatusExpiringSoon",
+        );
       case "lowStock":
-        return products.filter((product) => Number(product.stockQty) <= 30);
+        return products.filter(
+          (product) => product.statusKey === "productStatusLowStock",
+        );
       case "all":
       default:
         return products;
@@ -289,8 +390,8 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
       value: inventorySummary.totalProducts,
       helper:
         language === "ar"
-          ? "المنتجات النشطة في المخزون"
-          : "Active products in inventory",
+          ? "جميع المنتجات في المخزون عبر كل الحالات"
+          : "All inventory products across every status",
       actionLabel: language === "ar" ? "عرض الكل" : "View all",
       showAction: false,
       activeClass: "border-teal-300 bg-teal-50 text-teal-900 shadow-sm",
@@ -796,191 +897,230 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
         target={batchActionTarget}
       />
       <div className="p-6 space-y-4 flex-1">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h1 className="text-xl font-semibold tracking-tight text-gray-900">
-                    {t("inventory")}
-                  </h1>
-                  <span className="text-sm text-gray-300">•</span>
-                  <p className="text-sm text-gray-500">
-                    Manage products and stock updates from one place.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="bg-teal-500 hover:bg-teal-600 h-9 gap-2 px-4 text-sm rounded-full shadow-sm inline-flex cursor-pointer items-center justify-center text-white font-medium transition-all duration-200 outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2">
-                      <Plus className="size-4" />
-                      {language === "ar" ? "إنشاء جديد" : "Create New"}
-                      <ChevronDown className="size-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="w-60 rounded-2xl border-gray-200 p-1.5"
-                  >
-                    <DropdownMenuItem
-                      className="rounded-xl px-3 py-2.5"
-                      onClick={() => setCreateProductOpen(true)}
-                    >
-                      <PackagePlus className="size-4 text-teal-600" />
-                      <span>
-                        {language === "ar"
-                          ? "إنشاء منتج جديد"
-                          : "Create New Product"}
-                      </span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="rounded-xl px-3 py-2.5"
-                      onClick={() => {
-                        setCreateEntityValue("");
-                        setCreateEntityDialog("brand");
-                      }}
-                    >
-                      <Tags className="size-4 text-teal-600" />
-                      <span>
-                        {language === "ar"
-                          ? "إنشاء علامة تجارية جديدة"
-                          : "Create New Brand"}
-                      </span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="rounded-xl px-3 py-2.5"
-                      onClick={() => {
-                        setCreateEntityValue("");
-                        setCreateEntityDialog("category");
-                      }}
-                    >
-                      <Shapes className="size-4 text-teal-600" />
-                      <span>
-                        {language === "ar"
-                          ? "إنشاء فئة جديدة"
-                          : "Create New Category"}
-                      </span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="rounded-xl px-3 py-2.5"
-                      onClick={() => {
-                        setCreateEntityValue("");
-                        setCreateEntityDialog("manufacturer");
-                      }}
-                    >
-                      <Factory className="size-4 text-teal-600" />
-                      <span>
-                        {language === "ar"
-                          ? "إنشاء مُصنّع جديد"
-                          : "Create New Manufacturer"}
-                      </span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button
-                  onClick={() => onNavigate("updateStock")}
-                  variant="outline"
-                  className="group h-9 gap-2 px-4 text-sm rounded-full border-gray-300 bg-white"
-                >
-                  <History className="size-4" />
-                  {t("stockHistory")}
-                  <ArrowUpRight
-                    className="size-4 text-gray-600 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                    strokeWidth={2.4}
-                  />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="group h-9 gap-2 px-4 text-sm rounded-full border-gray-300 bg-white"
-                >
-                  <Printer className="size-4" />
-                  {t("printBarcode")}
-                  <ArrowUpRight
-                    className="size-4 text-gray-600 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                    strokeWidth={2.4}
-                  />
-                </Button>
+        <div className="px-1 py-1">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">
+                  {t("inventory")}
+                </h1>
+                <span className="text-sm text-gray-300">•</span>
+                <p className="text-sm text-gray-500">
+                  Monitor inventory performance and manage stock in one place.
+                </p>
               </div>
             </div>
 
-            <div className="grid gap-3 xl:grid-cols-[40%_60%]">
-              <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-3">
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700">
-                  Stock Updates
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => setImportDialogOpen(true)}
-                    className="h-8 gap-2 px-3 text-sm rounded-full bg-teal-500 text-white shadow-sm hover:bg-teal-600"
-                  >
-                    <Upload className="size-4" />
-                    {t("uploadStockFile")}
-                  </Button>
-                  <Button
-                    onClick={() => onNavigate("manualUpdateStock")}
-                    className="group h-8 gap-2 px-3 text-sm rounded-full bg-teal-500 text-white shadow-sm hover:bg-teal-600"
-                  >
-                    <FileEdit className="size-4" />
-                    {t("manualUpdateStock")}
-                    <ArrowUpRight
-                      className="size-4 text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                      strokeWidth={2.4}
-                    />
-                  </Button>
-                </div>
-              </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 text-[13px] font-medium text-gray-700 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2">
+                  <Sparkles className="size-3.5 text-teal-600" />
+                  {language === "ar" ? "الإجراءات السريعة" : "Quick Actions"}
+                  <ChevronDown className="size-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-[348px] rounded-2xl border-gray-200 p-1.5 shadow-xl"
+              >
+                <DropdownMenuLabel className="px-2.5 py-2">
+                  <div className="space-y-1">
+                    <p className="text-[13px] font-semibold text-gray-900">
+                      {language === "ar"
+                        ? "الإجراءات السريعة"
+                        : "Quick Actions"}
+                    </p>
+                    <p className="text-[11px] font-normal leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "إنشاء المنتجات، تحديث المخزون، ومتابعة الشراء من مكان واحد"
+                        : "Create products, update stock, and manage purchase flow from one place"}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
 
-              <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3">
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-600">
-                  Purchase Flow
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    className="group flex cursor-pointer items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-2.5 py-2 text-start transition-colors hover:border-teal-200 hover:bg-teal-50/60"
-                  >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
-                      <ShoppingBag className="size-4" strokeWidth={2} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium leading-4.5 text-gray-900">
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  {language === "ar" ? "الإنشاء والسجل" : "Create and History"}
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  className="rounded-xl px-2.5 py-2.5"
+                  onClick={() => setCreateProductOpen(true)}
+                >
+                  <PackagePlus className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {language === "ar"
+                        ? "إنشاء منتج جديد"
+                        : "Create New Product"}
+                    </div>
+                    <div className="text-[11px] leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "ابدأ بإضافة منتج جديد إلى المخزون"
+                        : "Start a new product record in inventory"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl px-2.5 py-2.5"
+                  onClick={() => onNavigate("updateStock")}
+                >
+                  <History className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {t("stockHistory")}
+                    </div>
+                    <div className="text-[11px] leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "راجع آخر تحديثات المخزون والمسودات"
+                        : "Review recent stock updates and drafts"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="rounded-xl px-2.5 py-2.5">
+                  <Printer className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {t("printBarcode")}
+                    </div>
+                    <div className="text-[11px] leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "اطبع الباركود للمنتجات المحددة"
+                        : "Print barcode labels for selected products"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  {language === "ar" ? "تحديثات المخزون" : "Stock Updates"}
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  className="rounded-xl px-2.5 py-2.5"
+                  onClick={() => setImportDialogOpen(true)}
+                >
+                  <Upload className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {t("uploadStockFile")}
+                    </div>
+                    <div className="text-[11px] leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "استورد تحديثات المخزون من ملف"
+                        : "Import stock updates from a file"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl px-2.5 py-2.5"
+                  onClick={() => onNavigate("manualUpdateStock")}
+                >
+                  <FileEdit className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {t("manualUpdateStock")}
+                    </div>
+                    <div className="text-[11px] leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "أدخل الكميات والتشغيلات يدويًا"
+                        : "Enter quantities and batches manually"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  {language === "ar" ? "تدفق الشراء" : "Purchase Flow"}
+                </DropdownMenuLabel>
+                <DropdownMenuItem className="rounded-xl px-2.5 py-2.5">
+                  <ShoppingBag className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium text-gray-900">
                         {t("receiveMarketplacePurchaseOrders")}
                       </span>
-                      <span className="block text-xs text-gray-500">
+                      <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700">
                         3 {t("new")}
                       </span>
-                    </span>
-                    <ArrowUpRight
-                      className="size-4 shrink-0 text-gray-600 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                      strokeWidth={2.4}
-                    />
-                  </button>
+                    </div>
+                    <div className="text-[11px] leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "استلم طلبات الشراء الواردة من السوق"
+                        : "Receive incoming marketplace purchase orders"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="rounded-xl px-2.5 py-2.5">
+                  <FileText className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {t("createNewPurchaseOrder")}
+                    </div>
+                    <div className="text-[11px] leading-4 text-gray-500">
+                      {language === "ar"
+                        ? "أنشئ أمر شراء جديد للموردين"
+                        : "Create a new purchase order for suppliers"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
 
-                  <button
-                    type="button"
-                    className="group flex cursor-pointer items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-2.5 py-2 text-start transition-colors hover:border-teal-200 hover:bg-teal-50/60"
-                  >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
-                      <FileText className="size-4" strokeWidth={2} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium leading-4.5 text-gray-900">
-                        {t("createNewPurchaseOrder")}
-                      </span>
-                      <span className="block text-xs text-gray-500">
-                        {t("lastAdded")} 6 {t("daysAgo")}
-                      </span>
-                    </span>
-                    <ArrowUpRight
-                      className="size-4 shrink-0 text-gray-600 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                      strokeWidth={2.4}
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  {language === "ar" ? "إنشاء سريع" : "Quick Create"}
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  className="rounded-xl px-2.5 py-2.5"
+                  onClick={() => {
+                    setCreateEntityValue("");
+                    setCreateEntityDialog("brand");
+                  }}
+                >
+                  <Tags className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {language === "ar"
+                        ? "إنشاء علامة تجارية جديدة"
+                        : "Create New Brand"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl px-2.5 py-2.5"
+                  onClick={() => {
+                    setCreateEntityValue("");
+                    setCreateEntityDialog("category");
+                  }}
+                >
+                  <Shapes className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {language === "ar"
+                        ? "إنشاء فئة جديدة"
+                        : "Create New Category"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl px-2.5 py-2.5"
+                  onClick={() => {
+                    setCreateEntityValue("");
+                    setCreateEntityDialog("manufacturer");
+                  }}
+                >
+                  <Factory className="size-4 text-teal-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-900">
+                      {language === "ar"
+                        ? "إنشاء مُصنّع جديد"
+                        : "Create New Manufacturer"}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -1384,8 +1524,8 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                                 className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                   product.statusColor === "red"
                                     ? "bg-red-100 text-red-700 hover:bg-red-100"
-                                    : product.statusColor === "green"
-                                      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                                    : product.statusColor === "orange"
+                                      ? "bg-orange-100 text-orange-700 hover:bg-orange-100"
                                       : "bg-yellow-100 text-yellow-700 hover:bg-yellow-100"
                                 }`}
                               >
